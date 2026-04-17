@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 export default function Home() {
   const router = useRouter();
 
+  // Redirect to login or goals based on auth state
   useEffect(() => {
     const user = localStorage.getItem('user');
     if (user) {
