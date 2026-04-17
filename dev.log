@@ -1,0 +1,19 @@
+
+> okr-tool@0.1.0 dev
+> next dev
+
+⚠ Port 3000 is in use by process 5548, using available port 3002 instead.
+▲ Next.js 16.2.4 (Turbopack)
+- Local:         http://localhost:3002
+- Network:       http://172.19.100.30:3002
+- Environments: .env.local, .env
+✓ Ready in 1424ms
+⨯ Another next dev server is already running.
+
+- Local:        http://localhost:3001
+- PID:          21408
+- Dir:          C:\Users\wincube\Desktop\okr-tool
+- Log:          .next\dev\logs\next-development.log
+
+Run taskkill /PID 21408 /F to stop it.
+[?25h

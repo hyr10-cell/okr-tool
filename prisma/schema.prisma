@@ -1,0 +1,357 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ─────────────────────────────────────────────
+// 인증 / 세션 (NextAuth.js 필수 테이블)
+// ─────────────────────────────────────────────
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─────────────────────────────────────────────
+// 사용자 / 조직
+// ─────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  name          String
+  image         String?
+  role          Role      @default(MEMBER)
+  slackUserId   String?
+  isActive      Boolean   @default(true)
+  notifyEmail   Boolean   @default(true)
+  notifySlack   Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  accounts      Account[]
+  sessions      Session[]
+  departments   UserDepartment[]
+  ownedGoals    Goal[]    @relation("GoalOwner")
+  createdGoals  Goal[]    @relation("GoalCreator")
+  checkIns      CheckIn[]
+  sentFeedback  Feedback[] @relation("FeedbackSender")
+  receivedFeedback Feedback[] @relation("FeedbackReceiver")
+  auditLogs     AuditLog[]
+  approvals     ApprovalHistory[]
+  goalExamples  GoalExample[]
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  MEMBER
+}
+
+model Department {
+  id          String           @id @default(uuid())
+  name        String
+  parentId    String?
+  parent      Department?      @relation("DeptHierarchy", fields: [parentId], references: [id])
+  children    Department[]     @relation("DeptHierarchy")
+  members     UserDepartment[]
+  goals       Goal[]
+  createdAt   DateTime         @default(now())
+}
+
+model UserDepartment {
+  userId       String
+  departmentId String
+  isManager    Boolean  @default(false)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@id([userId, departmentId])
+}
+
+// ─────────────────────────────────────────────
+// 사이클
+// ─────────────────────────────────────────────
+
+model GoalCycle {
+  id               String    @id @default(uuid())
+  name             String   
+  startDate        DateTime?
+  endDate          DateTime?
+  restrictPeriod   Boolean   @default(false)
+  allowApproval    Boolean   @default(false)
+  isReadOnly       Boolean   @default(false)
+  checkinAlertOn   Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  goals            Goal[]
+}
+
+// ─────────────────────────────────────────────
+// 목표
+// ─────────────────────────────────────────────
+
+model Goal {
+  id             String       @id @default(uuid())
+  cycleId        String
+  cycle          GoalCycle    @relation(fields: [cycleId], references: [id])
+  parentGoalId   String?
+  parentGoal     Goal?        @relation("GoalHierarchy", fields: [parentGoalId], references: [id])
+  childGoals     Goal[]       @relation("GoalHierarchy")
+  level          GoalLevel
+  title          String      
+  startDate      DateTime
+  endDate        DateTime
+  ownerDeptId    String
+  ownerDept      Department   @relation(fields: [ownerDeptId], references: [id])
+  ownerUserId    String
+  owner          User         @relation("GoalOwner", fields: [ownerUserId], references: [id])
+  weight         Decimal?     // @db.Decimal(5, 2)
+  visibility     Visibility   @default(PUBLIC)
+  hasMetric      Boolean      @default(false)
+  metricName     String?     
+  metricStart    Decimal?
+  metricTarget   Decimal?
+  metricCurrent  Decimal?
+  description    String?
+  status         GoalStatus   @default(PENDING)
+  approvalStatus ApprovalStatus?
+  createdById    String
+  createdBy      User         @relation("GoalCreator", fields: [createdById], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  deletedAt      DateTime?
+
+  checkIns       CheckIn[]
+  approvals      ApprovalHistory[]
+
+  @@index([cycleId])
+  @@index([ownerUserId])
+  @@index([ownerDeptId])
+  @@index([parentGoalId])
+  @@index([deletedAt])
+}
+
+enum GoalLevel {
+  COMPANY
+  TEAM
+  INDIVIDUAL
+}
+
+enum Visibility {
+  PUBLIC
+  PARTIAL
+}
+
+enum GoalStatus {
+  PENDING
+  ON_TRACK
+  OFF_TRACK
+  COMPLETED
+  STOPPED
+}
+
+enum ApprovalStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+}
+
+// ─────────────────────────────────────────────
+// 체크인
+// ─────────────────────────────────────────────
+
+model CheckIn {
+  id           String      @id @default(uuid())
+  goalId       String
+  goal         Goal        @relation(fields: [goalId], references: [id])
+  checkinById  String
+  checkinBy    User        @relation(fields: [checkinById], references: [id])
+  isProxy      Boolean     @default(false)
+  statusBefore GoalStatus
+  statusAfter  GoalStatus
+  metricValue  Decimal?
+  comment      String?
+  checkedAt    DateTime    @default(now())
+
+  attachments  Attachment[]
+
+  @@index([goalId])
+  @@index([checkedAt])
+}
+
+// ─────────────────────────────────────────────
+// 첨부파일
+// ─────────────────────────────────────────────
+
+model Attachment {
+  id          String   @id @default(uuid())
+  checkinId   String
+  checkin     CheckIn  @relation(fields: [checkinId], references: [id])
+  fileName    String
+  s3Key       String   @unique
+  mimeType    String
+  sizeBytes   Int
+  uploadedAt  DateTime @default(now())
+}
+
+// ─────────────────────────────────────────────
+// 피드백
+// ─────────────────────────────────────────────
+
+model Feedback {
+  id          String        @id @default(uuid())
+  senderId    String
+  sender      User          @relation("FeedbackSender", fields: [senderId], references: [id])
+  receiverId  String
+  receiver    User          @relation("FeedbackReceiver", fields: [receiverId], references: [id])
+  type        FeedbackType
+  valueId     String?
+  value       CompanyValue? @relation(fields: [valueId], references: [id])
+  content     String
+  createdAt   DateTime      @default(now())
+  deletedAt   DateTime?
+
+  @@index([receiverId])
+  @@index([senderId])
+  @@index([createdAt])
+}
+
+enum FeedbackType {
+  KEEP_GOING
+  IMPROVE
+}
+
+model CompanyValue {
+  id          String     @id @default(uuid())
+  name        String    
+  description String?
+  sortOrder   Int
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+
+  feedbacks   Feedback[]
+}
+
+// ─────────────────────────────────────────────
+// 목표 예시
+// ─────────────────────────────────────────────
+
+model GoalExample {
+  id          String    @id @default(uuid())
+  level       GoalLevel
+  title       String   
+  content     String
+  createdById String
+  createdBy   User      @relation(fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now())
+}
+
+// ─────────────────────────────────────────────
+// 승인 이력
+// ─────────────────────────────────────────────
+
+model ApprovalHistory {
+  id       String         @id @default(uuid())
+  goalId   String
+  goal     Goal           @relation(fields: [goalId], references: [id])
+  action   ApprovalAction
+  actorId  String?
+  actor    User?          @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  reason   String?
+  actedAt  DateTime       @default(now())
+
+  @@index([goalId])
+}
+
+enum ApprovalAction {
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
+// ─────────────────────────────────────────────
+// 감사 로그
+// ─────────────────────────────────────────────
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  actorId     String?
+  actor       User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action      String
+  targetType  String
+  targetId    String
+  beforeData  Json?
+  afterData   Json?
+  changedData Json?
+  createdAt   DateTime @default(now())
+
+  @@index([actorId])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
+
+// ─────────────────────────────────────────────
+// 전사 설정
+// ─────────────────────────────────────────────
+
+model AppSettings {
+  id                  String   @id @default("singleton")
+  checkinIntervalDays Int      @default(7)
+  slackConnected      Boolean  @default(false)
+  slackTeamId         String?
+  slackTeamName       String?
+  feedbackCycleDays   Int      @default(30)
+  updatedAt           DateTime @updatedAt
+}
+
+// ─────────────────────────────────────────────
+// 구성원 초대 링크
+// ─────────────────────────────────────────────
+
+model InviteToken {
+  id          String   @id @default(uuid())
+  email       String
+  token       String   @unique @default(uuid())
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime @default(now())
+}
