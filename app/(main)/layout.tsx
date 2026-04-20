@@ -54,8 +54,8 @@ export default function MainLayout({
             프로필
           </a>
           {user?.role === 'ADMIN' && (
-            <a href="/admin/members" className="block rounded px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
-              관리
+            <a href="/admin" className="block rounded px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
+              ⚙️ 관리자
             </a>
           )}
           <button
