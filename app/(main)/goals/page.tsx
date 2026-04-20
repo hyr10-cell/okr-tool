@@ -18,6 +18,9 @@ export default function GoalsPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [title, setTitle] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [levelFilter, setLevelFilter] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchGoals();
@@ -53,6 +56,13 @@ export default function GoalsPage() {
     }
   }
 
+  const filteredGoals = goals.filter((goal) => {
+    if (statusFilter && goal.status !== statusFilter) return false;
+    if (levelFilter && goal.level !== levelFilter) return false;
+    if (searchQuery && !goal.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    return true;
+  });
+
   if (loading) {
     return <div className="text-center py-12">로드 중...</div>;
   }
@@ -64,13 +74,66 @@ export default function GoalsPage() {
         <Button onClick={() => setShowModal(true)}>+ 새 목표</Button>
       </div>
 
-      {goals.length === 0 ? (
+      {/* 필터 영역 */}
+      <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <FormInput
+          label="검색"
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder="목표 검색..."
+          type="text"
+        />
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">상태</label>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-indigo-500"
+          >
+            <option value="">전체</option>
+            <option value="PENDING">대기</option>
+            <option value="ON_TRACK">순항</option>
+            <option value="OFF_TRACK">난항</option>
+            <option value="COMPLETED">완료</option>
+            <option value="STOPPED">중단</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">레벨</label>
+          <select
+            value={levelFilter}
+            onChange={(e) => setLevelFilter(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-indigo-500"
+          >
+            <option value="">전체</option>
+            <option value="COMPANY">회사</option>
+            <option value="TEAM">팀</option>
+            <option value="INDIVIDUAL">개인</option>
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">초기화</label>
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setSearchQuery('');
+              setStatusFilter('');
+              setLevelFilter('');
+            }}
+            className="w-full"
+          >
+            필터 초기화
+          </Button>
+        </div>
+      </div>
+
+      {filteredGoals.length === 0 ? (
         <div className="rounded-lg border border-gray-200 bg-gray-50 p-12 text-center text-gray-600">
-          아직 목표가 없습니다.
+          {goals.length === 0 ? '아직 목표가 없습니다.' : '조건에 맞는 목표가 없습니다.'}
         </div>
       ) : (
         <div className="space-y-3">
-          {goals.map((goal) => (
+          {filteredGoals.map((goal) => (
             <Card key={goal.id} hoverable>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
