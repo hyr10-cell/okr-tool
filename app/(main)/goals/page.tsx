@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { StatusBadge, Card, Button, Modal, FormInput } from '@/app/components/ui';
+import { GoalDetail } from '@/app/components/goals/GoalDetail';
 
 interface Goal {
   id: string;
@@ -21,6 +22,7 @@ export default function GoalsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [levelFilter, setLevelFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchGoals();
@@ -134,7 +136,7 @@ export default function GoalsPage() {
       ) : (
         <div className="space-y-3">
           {filteredGoals.map((goal) => (
-            <Card key={goal.id} hoverable>
+            <Card key={goal.id} hoverable onClick={() => setSelectedGoalId(goal.id)}>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900 text-lg">{goal.title}</h3>
@@ -161,6 +163,20 @@ export default function GoalsPage() {
           onKeyDown={(e) => e.key === 'Enter' && handleCreateGoal()}
         />
       </Modal>
+
+      {/* Goal Detail Sidebar */}
+      {selectedGoalId && (
+        <GoalDetail
+          goal={filteredGoals.find((g) => g.id === selectedGoalId)!}
+          onClose={() => setSelectedGoalId(null)}
+          onCheckIn={() => {
+            console.log('Check-in clicked for goal:', selectedGoalId);
+          }}
+          onWriteFeedback={() => {
+            console.log('Write feedback clicked for goal:', selectedGoalId);
+          }}
+        />
+      )}
     </div>
   );
 }
