@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { StatusBadge, Card, Button, Modal, FormInput } from '@/app/components/ui';
 import { GoalDetail } from '@/app/components/goals/GoalDetail';
+import { WeightModal } from '@/app/components/goals/WeightModal';
 
 interface Goal {
   id: string;
@@ -12,12 +13,15 @@ interface Goal {
   level: string;
   weight?: number;
   description?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export default function GoalsPage() {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showWeightModal, setShowWeightModal] = useState(false);
   const [title, setTitle] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [levelFilter, setLevelFilter] = useState<string>('');
@@ -73,7 +77,12 @@ export default function GoalsPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">목표</h1>
-        <Button onClick={() => setShowModal(true)}>+ 새 목표</Button>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={() => setShowWeightModal(true)}>
+            ⚖️ 가중치 설정
+          </Button>
+          <Button onClick={() => setShowModal(true)}>+ 새 목표</Button>
+        </div>
       </div>
 
       {/* 필터 영역 */}
@@ -164,6 +173,19 @@ export default function GoalsPage() {
         />
       </Modal>
 
+      {/* Weight Management Modal */}
+      <WeightModal
+        isOpen={showWeightModal}
+        onClose={() => setShowWeightModal(false)}
+        goals={goals}
+        onSubmit={(weights) => {
+          setGoals(goals.map(g => ({
+            ...g,
+            weight: weights[g.id] || g.weight || 0,
+          })));
+        }}
+      />
+
       {/* Goal Detail Sidebar */}
       {selectedGoalId && (
         <GoalDetail
@@ -174,6 +196,13 @@ export default function GoalsPage() {
           }}
           onWriteFeedback={() => {
             console.log('Write feedback clicked for goal:', selectedGoalId);
+          }}
+          onEdit={(data) => {
+            setGoals(goals.map(g =>
+              g.id === selectedGoalId
+                ? { ...g, ...data }
+                : g
+            ));
           }}
         />
       )}

@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Card, Button, StatusBadge } from '@/app/components/ui';
 import { CheckInModal } from './CheckInModal';
 
+import { GoalEditModal } from './GoalEditModal';
+
 interface GoalDetailProps {
   goal: {
     id: string;
@@ -21,14 +23,21 @@ interface GoalDetailProps {
   onClose: () => void;
   onCheckIn?: (data: { status: string; metricValue?: number; comment: string }) => void;
   onWriteFeedback?: () => void;
+  onEdit?: (data: { title: string; description: string; startDate: string; endDate: string }) => void;
 }
 
-export function GoalDetail({ goal, onClose, onCheckIn, onWriteFeedback }: GoalDetailProps) {
+export function GoalDetail({ goal, onClose, onCheckIn, onWriteFeedback, onEdit }: GoalDetailProps) {
   const [showCheckInModal, setShowCheckInModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const handleCheckInSubmit = (data: { status: string; metricValue?: number; comment: string }) => {
     onCheckIn?.(data);
     setShowCheckInModal(false);
+  };
+
+  const handleEditSubmit = (data: { title: string; description: string; startDate: string; endDate: string }) => {
+    onEdit?.(data);
+    setShowEditModal(false);
   };
 
   return (
@@ -97,6 +106,9 @@ export function GoalDetail({ goal, onClose, onCheckIn, onWriteFeedback }: GoalDe
               <Button onClick={onWriteFeedback} variant="secondary" className="w-full">
                 피드백 작성하기
               </Button>
+              <Button onClick={() => setShowEditModal(true)} variant="secondary" className="w-full">
+                수정하기
+              </Button>
             </div>
 
             {/* 체크인 이력 */}
@@ -127,6 +139,22 @@ export function GoalDetail({ goal, onClose, onCheckIn, onWriteFeedback }: GoalDe
         metricName={goal.metricName}
         metricCurrent={goal.metricCurrent}
         onSubmit={handleCheckInSubmit}
+      />
+
+      {/* Goal Edit Modal */}
+      <GoalEditModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        goal={{
+          id: goal.id,
+          title: goal.title,
+          description: goal.description,
+          startDate: goal.startDate,
+          endDate: goal.endDate,
+          level: goal.level,
+          owner: goal.owner,
+        }}
+        onSubmit={handleEditSubmit}
       />
     </>
   );
