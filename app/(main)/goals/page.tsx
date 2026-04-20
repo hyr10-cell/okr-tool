@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { StatusBadge, Card, Button, Modal, FormInput } from '@/app/components/ui';
 
 interface Goal {
   id: string;
@@ -11,22 +12,6 @@ interface Goal {
   weight?: number;
   description?: string;
 }
-
-const statusColor: Record<string, string> = {
-  PENDING: 'bg-gray-100 text-gray-800',
-  ON_TRACK: 'bg-green-100 text-green-800',
-  OFF_TRACK: 'bg-red-100 text-red-800',
-  COMPLETED: 'bg-blue-100 text-blue-800',
-  STOPPED: 'bg-gray-200 text-gray-600',
-};
-
-const statusLabel: Record<string, string> = {
-  PENDING: '대기',
-  ON_TRACK: '순항',
-  OFF_TRACK: '난항',
-  COMPLETED: '완료',
-  STOPPED: '중단',
-};
 
 export default function GoalsPage() {
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -76,12 +61,7 @@ export default function GoalsPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">목표</h1>
-        <button
-          onClick={() => setShowModal(true)}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 font-medium"
-        >
-          + 새 목표
-        </button>
+        <Button onClick={() => setShowModal(true)}>+ 새 목표</Button>
       </div>
 
       {goals.length === 0 ? (
@@ -91,7 +71,7 @@ export default function GoalsPage() {
       ) : (
         <div className="space-y-3">
           {goals.map((goal) => (
-            <div key={goal.id} className="rounded-lg border border-gray-200 bg-white p-5 hover:shadow-md transition">
+            <Card key={goal.id} hoverable>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900 text-lg">{goal.title}</h3>
@@ -99,55 +79,25 @@ export default function GoalsPage() {
                     <p className="text-sm text-gray-600 mt-1">{goal.description}</p>
                   )}
                   <div className="flex items-center gap-3 mt-3">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor[goal.status]}`}>
-                      {statusLabel[goal.status]}
-                    </span>
+                    <StatusBadge status={goal.status} />
                     <span className="text-xs text-gray-500">담당: {goal.owner.name}</span>
                   </div>
                 </div>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
 
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">새 목표 만들기</h2>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">목표명</label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="목표명을 입력하세요"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-indigo-500"
-                  onKeyPress={(e) => e.key === 'Enter' && handleCreateGoal()}
-                />
-              </div>
-
-              <div className="flex gap-2 justify-end pt-4">
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="rounded-lg border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50"
-                >
-                  취소
-                </button>
-                <button
-                  onClick={handleCreateGoal}
-                  className="rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700"
-                >
-                  만들기
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="새 목표 만들기" onConfirm={handleCreateGoal} confirmText="만들기">
+        <FormInput
+          label="목표명"
+          value={title}
+          onChange={setTitle}
+          placeholder="목표명을 입력하세요"
+          onKeyDown={(e) => e.key === 'Enter' && handleCreateGoal()}
+        />
+      </Modal>
     </div>
   );
 }
