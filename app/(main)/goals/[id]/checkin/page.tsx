@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 
-export default function CheckInPage({ params }: { params: { id: string } }) {
+export default function CheckInPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  const resolvedParams = use(params);
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<'ON_TRACK' | 'OFF_TRACK'>('ON_TRACK');
   const [note, setNote] = useState('');
@@ -13,13 +14,13 @@ export default function CheckInPage({ params }: { params: { id: string } }) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const res = await fetch(`/api/goals/${params.id}/checkins`, {
+    const res = await fetch(`/api/goals/${resolvedParams.id}/checkins`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ progress, status, note }),
     });
     setLoading(false);
-    if (res.ok) router.push(`/goals/${params.id}`);
+    if (res.ok) router.push(`/goals/${resolvedParams.id}`);
   }
 
   return (
