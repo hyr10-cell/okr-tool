@@ -213,6 +213,19 @@ export default function DashboardPage() {
                   />
                 </div>
               </div>
+
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-sm text-gray-600">대기</span>
+                  <span className="text-sm font-medium">{Math.round((stats.pending / stats.total) * 100)}%</span>
+                </div>
+                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-amber-500"
+                    style={{ width: `${(stats.pending / stats.total) * 100}%` }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </Card>
