@@ -24,9 +24,13 @@ export default function OrgPage() {
   const [loading, setLoading] = useState(true);
   const [expandedOrgIds, setExpandedOrgIds] = useState<Set<string>>(new Set());
   const [showModal, setShowModal] = useState(false);
+  const [showMemberModal, setShowMemberModal] = useState(false);
   const [editingOrgId, setEditingOrgId] = useState<string | null>(null);
+  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
   const [orgName, setOrgName] = useState('');
   const [leadName, setLeadName] = useState('');
+  const [memberName, setMemberName] = useState('');
+  const [memberRole, setMemberRole] = useState('');
 
   useEffect(() => {
     fetchOrganizations();
@@ -121,6 +125,35 @@ export default function OrgPage() {
     resetForm();
   }
 
+  function handleAddMember() {
+    if (!memberName.trim() || !memberRole.trim() || !selectedOrgId) {
+      alert('필수 항목을 입력해주세요');
+      return;
+    }
+
+    setOrgs(orgs.map(org => {
+      if (org.id === selectedOrgId) {
+        return {
+          ...org,
+          members: [
+            ...org.members,
+            {
+              id: Date.now().toString(),
+              name: memberName,
+              role: memberRole,
+              org: org.name,
+            }
+          ]
+        };
+      }
+      return org;
+    }));
+
+    setMemberName('');
+    setMemberRole('');
+    setShowMemberModal(false);
+  }
+
   function resetForm() {
     setOrgName('');
     setLeadName('');
@@ -141,6 +174,14 @@ export default function OrgPage() {
     }
   }
 
+  function handleDeleteMember(orgId: string, memberId: string) {
+    setOrgs(orgs.map(org =>
+      org.id === orgId
+        ? { ...org, members: org.members.filter(m => m.id !== memberId) }
+        : org
+    ));
+  }
+
   const renderOrganization = (org: Organization, level: number = 0) => {
     const isExpanded = expandedOrgIds.has(org.id);
     const hasChildren = org.children && org.children.length > 0;
@@ -148,51 +189,72 @@ export default function OrgPage() {
     return (
       <div key={org.id} style={{ marginLeft: `${level * 24}px` }} className="mb-4">
         <Card className={hasChildren ? 'cursor-pointer hover:bg-gray-50' : ''}>
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                {hasChildren && (
-                  <button
-                    onClick={() => toggleOrgExpand(org.id)}
-                    className="w-5 h-5 flex items-center justify-center text-indigo-600 hover:bg-indigo-50 rounded"
-                  >
-                    {isExpanded ? '▼' : '▶'}
-                  </button>
-                )}
-                <h3 className="font-semibold text-gray-900 text-lg">{org.name}</h3>
-              </div>
-
-              <div className="mt-2 space-y-1 text-sm text-gray-600">
-                <p>팀장: {org.lead || '(미배정)'}</p>
-                <p>구성원: {org.members.length}명</p>
-              </div>
-
-              {org.members.length > 0 && (
-                <div className="mt-3 space-y-1 text-sm text-gray-700">
-                  {org.members.map(member => (
-                    <p key={member.id} className="ml-4">
-                      • {member.name} ({member.role})
-                    </p>
-                  ))}
+          <div className="space-y-4">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  {hasChildren && (
+                    <button
+                      onClick={() => toggleOrgExpand(org.id)}
+                      className="w-5 h-5 flex items-center justify-center text-indigo-600 hover:bg-indigo-50 rounded"
+                    >
+                      {isExpanded ? '▼' : '▶'}
+                    </button>
+                  )}
+                  <h3 className="font-semibold text-gray-900 text-lg">{org.name}</h3>
                 </div>
-              )}
-            </div>
 
-            <div className="flex gap-2 flex-shrink-0">
-              <Button
-                variant="secondary"
-                onClick={() => handleEdit(org)}
-                className="text-sm px-3 py-1"
-              >
-                수정
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => handleDelete(org.id)}
-                className="text-sm px-3 py-1"
-              >
-                삭제
-              </Button>
+                <div className="mt-2 space-y-1 text-sm text-gray-600">
+                  <p>팀장: {org.lead || '(미배정)'}</p>
+                  <p>구성원: {org.members.length}명</p>
+                </div>
+
+                {org.members.length > 0 && (
+                  <div className="mt-3 space-y-2 pt-3 border-t">
+                    <p className="text-xs font-medium text-gray-500 uppercase">구성원 목록</p>
+                    {org.members.map(member => (
+                      <div key={member.id} className="flex items-center justify-between text-sm">
+                        <span className="text-gray-700">
+                          • {member.name} <span className="text-gray-500">({member.role})</span>
+                        </span>
+                        <button
+                          onClick={() => handleDeleteMember(org.id, member.id)}
+                          className="text-xs text-red-600 hover:text-red-800"
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2 flex-shrink-0">
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setSelectedOrgId(org.id);
+                    setShowMemberModal(true);
+                  }}
+                  className="text-sm px-3 py-1"
+                >
+                  +구성원
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => handleEdit(org)}
+                  className="text-sm px-3 py-1"
+                >
+                  수정
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => handleDelete(org.id)}
+                  className="text-sm px-3 py-1"
+                >
+                  삭제
+                </Button>
+              </div>
             </div>
           </div>
         </Card>
@@ -228,7 +290,7 @@ export default function OrgPage() {
         </div>
       )}
 
-      {/* Create/Edit Modal */}
+      {/* Create/Edit Organization Modal */}
       <Modal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
@@ -258,6 +320,42 @@ export default function OrgPage() {
             </Button>
             <Button onClick={handleCreateOrUpdate}>
               {editingOrgId ? '수정하기' : '만들기'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Add Member Modal */}
+      <Modal
+        isOpen={showMemberModal}
+        onClose={() => setShowMemberModal(false)}
+        title="구성원 추가"
+        showFooter={false}
+        size="lg"
+      >
+        <div className="space-y-4">
+          <FormInput
+            label="이름"
+            value={memberName}
+            onChange={setMemberName}
+            placeholder="구성원 이름"
+            required
+          />
+
+          <FormInput
+            label="직책/역할"
+            value={memberRole}
+            onChange={setMemberRole}
+            placeholder="예: 개발자, 팀장, 매니저"
+            required
+          />
+
+          <div className="flex gap-2 justify-end pt-4 border-t">
+            <Button onClick={() => setShowMemberModal(false)} variant="secondary">
+              취소
+            </Button>
+            <Button onClick={handleAddMember}>
+              추가하기
             </Button>
           </div>
         </div>

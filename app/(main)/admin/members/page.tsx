@@ -11,6 +11,20 @@ interface Member {
   org?: string;
 }
 
+interface Organization {
+  id: string;
+  name: string;
+}
+
+const DEMO_ORGS: Organization[] = [
+  { id: '1', name: '개발팀' },
+  { id: '2', name: '백엔드팀' },
+  { id: '3', name: '프론트엔드팀' },
+  { id: '4', name: '마케팅팀' },
+  { id: '5', name: '디자인팀' },
+  { id: '6', name: '데이터팀' },
+];
+
 export default function AdminMembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,6 +34,7 @@ export default function AdminMembersPage() {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState<'ADMIN' | 'MANAGER' | 'MEMBER'>('MEMBER');
   const [org, setOrg] = useState('');
+  const [showOrgSuggestions, setShowOrgSuggestions] = useState(false);
 
   useEffect(() => {
     fetchMembers();
@@ -78,6 +93,7 @@ export default function AdminMembersPage() {
     setOrg('');
     setEditingMemberId(null);
     setShowModal(false);
+    setShowOrgSuggestions(false);
   }
 
   function handleEdit(member: Member) {
@@ -99,6 +115,13 @@ export default function AdminMembersPage() {
     resetForm();
     setShowModal(true);
   }
+
+  // 조직 자동완성 필터링
+  const filteredOrgs = org.trim()
+    ? DEMO_ORGS.filter(o =>
+        o.name.toLowerCase().includes(org.toLowerCase())
+      )
+    : [];
 
   if (loading) {
     return <div className="text-center py-12">로드 중...</div>;
@@ -219,12 +242,39 @@ export default function AdminMembersPage() {
             </select>
           </div>
 
-          <FormInput
-            label="부서"
-            value={org}
-            onChange={setOrg}
-            placeholder="부서명을 입력하세요 (선택사항)"
-          />
+          {/* 부서/조직 필드 (Autocomplete) */}
+          <div className="relative">
+            <label className="block text-sm font-medium text-gray-700 mb-2">부서 (선택사항)</label>
+            <input
+              type="text"
+              value={org}
+              onChange={(e) => {
+                setOrg(e.target.value);
+                setShowOrgSuggestions(e.target.value.trim().length > 0);
+              }}
+              onFocus={() => org.trim().length > 0 && setShowOrgSuggestions(true)}
+              placeholder="부서명을 입력하세요 (예: 개발팀)"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-indigo-500"
+            />
+
+            {/* 부서 자동완성 드롭다운 */}
+            {showOrgSuggestions && filteredOrgs.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10">
+                {filteredOrgs.map(organization => (
+                  <button
+                    key={organization.id}
+                    onClick={() => {
+                      setOrg(organization.name);
+                      setShowOrgSuggestions(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-indigo-50 border-b border-gray-100 last:border-b-0 text-sm text-gray-900 font-medium"
+                  >
+                    {organization.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           <div className="flex gap-2 justify-end pt-4 border-t">
             <Button onClick={() => setShowModal(false)} variant="secondary">

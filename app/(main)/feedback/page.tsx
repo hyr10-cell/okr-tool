@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Card, Button, Modal, FormInput } from '@/app/components/ui';
+import { formatDateKo } from '@/app/lib/dateUtils';
 
 interface Feedback {
   id: string;
@@ -13,6 +14,21 @@ interface Feedback {
   recipient?: string;
 }
 
+interface Member {
+  id: string;
+  name: string;
+  role?: string;
+}
+
+const DEMO_MEMBERS: Member[] = [
+  { id: '1', name: '김개발', role: '개발팀장' },
+  { id: '2', name: '이백엔드', role: '개발자' },
+  { id: '3', name: '박프론트', role: '개발자' },
+  { id: '4', name: '정데이터', role: '데이터 엔지니어' },
+  { id: '5', name: '최디자인', role: '디자이너' },
+  { id: '6', name: '홍마케팅', role: '마케팅매니저' },
+];
+
 export default function FeedbackPage() {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,6 +38,7 @@ export default function FeedbackPage() {
   const [recipientName, setRecipientName] = useState('');
   const [feedbackType, setFeedbackType] = useState<'KEEP_GOING' | 'IMPROVE'>('KEEP_GOING');
   const [content, setContent] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
     fetchFeedbacks();
@@ -94,7 +111,15 @@ export default function FeedbackPage() {
     setFeedbackType('KEEP_GOING');
     setContent('');
     setShowModal(false);
+    setShowSuggestions(false);
   }
+
+  // 자동완성 필터링
+  const filteredMembers = recipientName.trim()
+    ? DEMO_MEMBERS.filter(m =>
+        m.name.toLowerCase().includes(recipientName.toLowerCase())
+      )
+    : [];
 
   const filteredFeedbacks = feedbacks.filter(fb => {
     if (filterDirection !== 'all' && fb.direction !== filterDirection) return false;
@@ -164,7 +189,7 @@ export default function FeedbackPage() {
                       <span className="text-xs text-gray-500">→ {fb.recipient}</span>
                     )}
                     {fb.createdAt && (
-                      <span className="text-xs text-gray-500">{fb.createdAt}</span>
+                      <span className="text-xs text-gray-500">{formatDateKo(fb.createdAt)}</span>
                     )}
                   </div>
                   <p className="mt-3 text-gray-900 leading-relaxed">{fb.content}</p>
@@ -184,13 +209,42 @@ export default function FeedbackPage() {
         size="lg"
       >
         <div className="space-y-4">
-          <FormInput
-            label="받는 사람"
-            value={recipientName}
-            onChange={setRecipientName}
-            placeholder="피드백을 받을 사람의 이름을 입력하세요"
-            required
-          />
+          {/* 받는 사람 필드 (Autocomplete) */}
+          <div className="relative">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              받는 사람 <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={recipientName}
+              onChange={(e) => {
+                setRecipientName(e.target.value);
+                setShowSuggestions(e.target.value.trim().length > 0);
+              }}
+              onFocus={() => recipientName.trim().length > 0 && setShowSuggestions(true)}
+              placeholder="이름을 입력하세요 (예: 김개발)"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-indigo-500"
+            />
+
+            {/* 자동완성 드롭다운 */}
+            {showSuggestions && filteredMembers.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10">
+                {filteredMembers.map(member => (
+                  <button
+                    key={member.id}
+                    onClick={() => {
+                      setRecipientName(member.name);
+                      setShowSuggestions(false);
+                    }}
+                    className="w-full text-left px-3 py-2 hover:bg-indigo-50 border-b border-gray-100 last:border-b-0 text-sm"
+                  >
+                    <span className="font-medium text-gray-900">{member.name}</span>
+                    {member.role && <span className="text-gray-500 ml-2">({member.role})</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">

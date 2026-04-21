@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
+import { formatDateTimeKo } from '@/app/lib/dateUtils';
 
 interface CheckIn {
   id: string;
@@ -27,8 +28,9 @@ const STATUS_LABEL: Record<string, string> = {
   PENDING: '대기', ON_TRACK: '순항', OFF_TRACK: '난항', COMPLETED: '완료',
 };
 
-export default function GoalDetailPage({ params }: { params: { id: string } }) {
+export default function GoalDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  const resolvedParams = use(params);
   const [goal, setGoal] = useState<Goal | null>(null);
   const [loading, setLoading] = useState(true);
   const [comment, setComment] = useState('');
@@ -37,7 +39,7 @@ export default function GoalDetailPage({ params }: { params: { id: string } }) {
   useEffect(() => { fetchGoal(); }, []);
 
   async function fetchGoal() {
-    const res = await fetch(`/api/goals/${params.id}`);
+    const res = await fetch(`/api/goals/${resolvedParams.id}`);
     if (res.ok) {
       const data = await res.json();
       setGoal(data.data);
@@ -47,7 +49,7 @@ export default function GoalDetailPage({ params }: { params: { id: string } }) {
 
   async function submitComment(checkinId: string) {
     if (!comment.trim()) return;
-    await fetch(`/api/goals/${params.id}/checkins/${checkinId}/comments`, {
+    await fetch(`/api/goals/${resolvedParams.id}/checkins/${checkinId}/comments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content: comment }),
@@ -106,7 +108,7 @@ export default function GoalDetailPage({ params }: { params: { id: string } }) {
             <div key={ci.id} className="bg-white rounded-lg border border-gray-200 p-4">
               <div className="flex justify-between text-sm mb-1">
                 <span className="font-medium text-gray-700">진행률 {ci.progress}%</span>
-                <span className="text-gray-400 text-xs">{new Date(ci.createdAt).toLocaleDateString('ko-KR')}</span>
+                <span className="text-gray-400 text-xs">{formatDateTimeKo(ci.createdAt)}</span>
               </div>
               {ci.note && <p className="text-sm text-gray-600 mt-1">{ci.note}</p>}
 

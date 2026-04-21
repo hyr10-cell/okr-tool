@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Card } from '@/app/components/ui';
+import { formatDateTimeKo } from '@/app/lib/dateUtils';
 
 interface Goal {
   id: string;
@@ -74,21 +75,21 @@ export default function DashboardPage() {
           type: 'goal_status',
           title: 'API 보안 강화',
           description: '상태 변경 (순항 → 난항)',
-          timestamp: '2024-03-20 14:30',
+          timestamp: '2024-03-20T14:30:00',
         },
         {
           id: '2',
           type: 'checkin',
           title: '서비스 성능 개선',
           description: '체크인 제출',
-          timestamp: '2024-03-19 10:15',
+          timestamp: '2024-03-19T10:15:00',
         },
         {
           id: '3',
           type: 'feedback',
           title: '좋은 진행 방향입니다',
           description: '피드백 수신',
-          timestamp: '2024-03-18 09:45',
+          timestamp: '2024-03-18T09:45:00',
         },
       ]);
     } finally {
@@ -236,7 +237,7 @@ export default function DashboardPage() {
                     <div className="flex-1">
                       <p className="font-medium text-gray-900">{activity.title}</p>
                       <p className="text-sm text-gray-600 mt-1">{activity.description}</p>
-                      <p className="text-xs text-gray-500 mt-1">{activity.timestamp}</p>
+                      <p className="text-xs text-gray-500 mt-1">{formatDateTimeKo(activity.timestamp)}</p>
                     </div>
                   </div>
                 </div>

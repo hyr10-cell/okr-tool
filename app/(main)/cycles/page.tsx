@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Card, Button, Modal, FormInput } from '@/app/components/ui';
+import { formatDateRangeKo } from '@/app/lib/dateUtils';
 
 interface Cycle {
   id: string;
@@ -165,7 +166,7 @@ export default function CyclesPage() {
                 </div>
 
                 <div className="space-y-1 pt-2 border-t text-sm text-gray-600">
-                  <p>📅 {cycle.startDate} ~ {cycle.endDate}</p>
+                  <p>📅 {formatDateRangeKo(cycle.startDate, cycle.endDate)}</p>
                   {cycle.goalsCount !== undefined && (
                     <p>🎯 목표 {cycle.goalsCount}개</p>
                   )}
