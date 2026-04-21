@@ -1,4 +1,3 @@
-import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
 const DEMO_FEEDBACKS = [
@@ -24,60 +23,13 @@ const DEMO_FEEDBACKS = [
   },
 ];
 
-export async function GET(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const receiverId = searchParams.get('receiverId');
-
-    if (!prisma) {
-      return NextResponse.json({ success: true, data: DEMO_FEEDBACKS });
-    }
-
-    const feedbacks = await prisma.feedback.findMany({
-      where: receiverId ? { receiverId } : {},
-      include: {
-        sender: { select: { id: true, name: true, email: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    return NextResponse.json({ success: true, data: feedbacks });
-  } catch (error) {
-    console.error('피드백 조회 실패:', error);
-    return NextResponse.json({ success: true, data: DEMO_FEEDBACKS });
-  }
+export async function GET() {
+  return NextResponse.json({ success: true, data: DEMO_FEEDBACKS });
 }
 
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-    const { senderId, receiverId, type, content } = body;
-
-    if (!prisma) {
-      return NextResponse.json(
-        { success: true, message: 'Demo mode' },
-        { status: 201 }
-      );
-    }
-
-    const feedback = await prisma.feedback.create({
-      data: {
-        senderId,
-        receiverId,
-        type,
-        content,
-      },
-      include: {
-        sender: { select: { id: true, name: true, email: true } },
-      },
-    });
-
-    return NextResponse.json({ success: true, data: feedback }, { status: 201 });
-  } catch (error) {
-    console.error('피드백 작성 실패:', error);
-    return NextResponse.json(
-      { error: '피드백 작성에 실패했습니다.' },
-      { status: 500 }
-    );
-  }
+export async function POST() {
+  return NextResponse.json(
+    { success: true, message: 'Demo mode' },
+    { status: 201 }
+  );
 }

@@ -1,6 +1,5 @@
 import NextAuth, { type DefaultSession } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
-import { prisma } from './prisma';
 
 declare module 'next-auth' {
   interface Session extends DefaultSession {
@@ -47,24 +46,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
           return demoAccounts[email];
         }
 
-        if (!prisma) return null;
-
-        try {
-          const user = await prisma.user.findUnique({
-            where: { email },
-          });
-
-          if (!user) return null;
-
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-          };
-        } catch {
-          return null;
-        }
+        return null;
       },
     }),
   ],

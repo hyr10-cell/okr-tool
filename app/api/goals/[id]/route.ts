@@ -61,10 +61,11 @@ const DEMO_GOALS = [
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const goal = DEMO_GOALS.find((g) => g.id === params.id);
+    const resolvedParams = await params;
+    const goal = DEMO_GOALS.find((g) => g.id === resolvedParams.id);
 
     if (!goal) {
       return NextResponse.json(

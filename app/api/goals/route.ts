@@ -1,5 +1,3 @@
-import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
 const DEMO_GOALS = [
@@ -41,81 +39,13 @@ const DEMO_GOALS = [
   },
 ];
 
-export async function GET(request: Request) {
-  try {
-    let session = null;
-    try { session = await auth(); } catch { /* demo mode fallback */ }
-    if (!session?.user?.id) {
-      return NextResponse.json({ success: true, data: DEMO_GOALS });
-    }
-
-    // Return demo goals if database not available
-    if (!prisma) {
-      return NextResponse.json({ success: true, data: DEMO_GOALS });
-    }
-
-    const goals = await prisma.goal.findMany({
-      where: { deletedAt: null },
-      include: {
-        owner: { select: { id: true, name: true, email: true } },
-        cycle: { select: { id: true, name: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    return NextResponse.json({ success: true, data: goals });
-  } catch (error) {
-    console.error('목표 조회 실패:', error);
-    // Return demo data on error
-    return NextResponse.json({ success: true, data: DEMO_GOALS });
-  }
+export async function GET() {
+  return NextResponse.json({ success: true, data: DEMO_GOALS });
 }
 
-export async function POST(request: Request) {
-  try {
-    let session = null;
-    try { session = await auth(); } catch { /* demo mode fallback */ }
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: true, message: 'Demo mode - data not persisted' },
-        { status: 201 }
-      );
-    }
-
-    const body = await request.json();
-
-    if (!prisma) {
-      return NextResponse.json(
-        { success: true, message: 'Demo mode - data not persisted' },
-        { status: 201 }
-      );
-    }
-
-    const goal = await prisma.goal.create({
-      data: {
-        cycleId: body.cycleId,
-        title: body.title,
-        level: body.level,
-        ownerUserId: body.ownerUserId,
-        ownerDeptId: body.ownerDeptId,
-        startDate: new Date(body.startDate),
-        endDate: new Date(body.endDate),
-        description: body.description,
-        createdById: session.user.id,
-        status: 'PENDING',
-      },
-      include: {
-        owner: { select: { id: true, name: true } },
-        cycle: { select: { id: true, name: true } },
-      },
-    });
-
-    return NextResponse.json({ success: true, data: goal }, { status: 201 });
-  } catch (error) {
-    console.error('목표 생성 실패:', error);
-    return NextResponse.json(
-      { error: '목표 생성에 실패했습니다.' },
-      { status: 500 }
-    );
-  }
+export async function POST() {
+  return NextResponse.json(
+    { success: true, message: 'Demo mode - data not persisted' },
+    { status: 201 }
+  );
 }

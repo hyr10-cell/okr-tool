@@ -1,4 +1,3 @@
-import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
 const DEMO_CYCLES = [
@@ -26,42 +25,19 @@ const DEMO_CYCLES = [
 
 export async function GET() {
   try {
-    if (!prisma) {
-      return NextResponse.json({ success: true, data: DEMO_CYCLES });
-    }
-
-    const cycles = await prisma.goalCycle.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
-
-    return NextResponse.json({ success: true, data: cycles });
+    return NextResponse.json({ success: true, data: DEMO_CYCLES });
   } catch (error) {
     console.error('사이클 조회 실패:', error);
     return NextResponse.json({ success: true, data: DEMO_CYCLES });
   }
 }
 
-export async function POST(request: Request) {
+export async function POST() {
   try {
-    const body = await request.json();
-    const { name, startDate, endDate } = body;
-
-    if (!prisma) {
-      return NextResponse.json(
-        { success: true, message: 'Demo mode' },
-        { status: 201 }
-      );
-    }
-
-    const cycle = await prisma.goalCycle.create({
-      data: {
-        name,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
-      },
-    });
-
-    return NextResponse.json({ success: true, data: cycle }, { status: 201 });
+    return NextResponse.json(
+      { success: true, message: 'Demo mode' },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('사이클 생성 실패:', error);
     return NextResponse.json(
