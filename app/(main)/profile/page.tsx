@@ -37,6 +37,11 @@ export default function ProfilePage() {
   };
 
   const handleSave = async () => {
+    if (!formData.org?.trim()) {
+      alert('부서는 필수 입력 항목입니다');
+      return;
+    }
+
     setSaving(true);
     try {
       // Save to localStorage
@@ -145,6 +150,7 @@ export default function ProfilePage() {
                 value={formData.org || ''}
                 onChange={(value) => handleEditChange('org', value)}
                 placeholder="부서명을 입력하세요"
+                required
               />
 
               <div className="pt-4 border-t flex gap-2 justify-end">

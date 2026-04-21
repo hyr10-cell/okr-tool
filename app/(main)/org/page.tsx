@@ -8,6 +8,7 @@ interface Member {
   name: string;
   role: string;
   org?: string;
+  dept?: string;
 }
 
 interface Organization {
@@ -57,28 +58,28 @@ export default function OrgPage() {
         {
           id: '1',
           name: '개발팀',
-          lead: '김개발',
+          lead: '황유리',
           members: [
-            { id: 'm1', name: '팀원1', role: 'Developer', org: '개발팀' },
-            { id: 'm2', name: '팀원2', role: 'Developer', org: '개발팀' },
+            { id: 'm1', name: '황유리', role: 'Developer', org: '개발팀', dept: '개발팀' },
+            { id: 'm2', name: '고종희', role: 'Developer', org: '개발팀', dept: '개발팀' },
           ],
           children: [
             {
               id: '1-1',
               name: '백엔드팀',
-              lead: '이백엔드',
+              lead: '고종희',
               parentId: '1',
               members: [
-                { id: 'm3', name: '개발자A', role: 'Backend Developer', org: '백엔드팀' },
+                { id: 'm3', name: '개발자A', role: 'Backend Developer', org: '백엔드팀', dept: '개발팀' },
               ],
             },
             {
               id: '1-2',
               name: '프론트엔드팀',
-              lead: '박프론트',
+              lead: '황유리',
               parentId: '1',
               members: [
-                { id: 'm4', name: '개발자B', role: 'Frontend Developer', org: '프론트엔드팀' },
+                { id: 'm4', name: '개발자B', role: 'Frontend Developer', org: '프론트엔드팀', dept: '개발팀' },
               ],
             },
           ],
@@ -193,6 +194,9 @@ export default function OrgPage() {
     const isExpanded = expandedOrgIds.has(org.id);
     const hasChildren = org.children && org.children.length > 0;
 
+    // 같은 부서의 구성원만 필터링
+    const visibleMembers = org.members.filter(m => m.dept === user?.org || isAdmin);
+
     return (
       <div key={org.id} style={{ marginLeft: `${level * 24}px` }} className="mb-4">
         <Card className={hasChildren ? 'cursor-pointer hover:bg-gray-50' : ''}>
@@ -213,13 +217,13 @@ export default function OrgPage() {
 
                 <div className="mt-2 space-y-1 text-sm text-gray-600">
                   <p>팀장: {org.lead || '(미배정)'}</p>
-                  <p>구성원: {org.members.length}명</p>
+                  <p>구성원: {visibleMembers.length}명</p>
                 </div>
 
-                {org.members.length > 0 && (
+                {visibleMembers.length > 0 && (
                   <div className="mt-3 space-y-2 pt-3 border-t">
                     <p className="text-xs font-medium text-gray-500 uppercase">구성원 목록</p>
-                    {org.members.map(member => (
+                    {visibleMembers.map(member => (
                       <div key={member.id} className="flex items-center justify-between text-sm">
                         <span className="text-gray-700">
                           • {member.name} <span className="text-gray-500">({member.role})</span>
