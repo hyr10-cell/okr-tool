@@ -9,6 +9,7 @@ export default function CheckInPage({ params }: { params: Promise<{ id: string }
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<'PENDING' | 'ON_TRACK' | 'OFF_TRACK' | 'COMPLETED'>('ON_TRACK');
   const [note, setNote] = useState('');
+  const [attachments, setAttachments] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
 
   const getAutoStatus = (prog: number) => {
@@ -26,7 +27,13 @@ export default function CheckInPage({ params }: { params: Promise<{ id: string }
     const res = await fetch(`/api/goals/${resolvedParams.id}/checkins`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ progress, status, note }),
+      body: JSON.stringify({
+        progress,
+        status,
+        note,
+        attachmentCount: attachments.length,
+        attachmentNames: attachments.map(f => f.name),
+      }),
     });
     setLoading(false);
     if (res.ok) router.push(`/goals/${resolvedParams.id}`);
@@ -95,6 +102,37 @@ export default function CheckInPage({ params }: { params: Promise<{ id: string }
             rows={4}
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-500"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">파일 첨부 (선택)</label>
+          <input
+            type="file"
+            multiple
+            onChange={(e) => {
+              if (e.target.files) {
+                setAttachments(Array.from(e.target.files));
+              }
+            }}
+            className="w-full"
+          />
+          {attachments.length > 0 && (
+            <div className="mt-2 space-y-1">
+              <p className="text-xs font-medium text-gray-600">첨부된 파일:</p>
+              {attachments.map((file, idx) => (
+                <div key={idx} className="flex items-center justify-between text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                  <span>{file.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => setAttachments(attachments.filter((_, i) => i !== idx))}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    제거
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <button
