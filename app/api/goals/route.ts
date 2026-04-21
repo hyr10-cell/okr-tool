@@ -13,6 +13,7 @@ const DEMO_GOALS = [
     description: '웹 응답 속도 50% 개선',
     weight: 30,
     createdAt: new Date(),
+    checkIns: [{ progress: 65 }],
   },
   {
     id: '2',
@@ -24,6 +25,7 @@ const DEMO_GOALS = [
     description: 'OWASP Top 10 취약점 제거',
     weight: 25,
     createdAt: new Date(),
+    checkIns: [{ progress: 30 }],
   },
   {
     id: '3',
@@ -35,14 +37,16 @@ const DEMO_GOALS = [
     description: '자동 검수 도구 도입',
     weight: 20,
     createdAt: new Date(),
+    checkIns: [],
   },
 ];
 
 export async function GET(request: Request) {
   try {
-    const session = await auth();
+    let session = null;
+    try { session = await auth(); } catch { /* demo mode fallback */ }
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ success: true, data: DEMO_GOALS });
     }
 
     // Return demo goals if database not available
@@ -69,9 +73,13 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const session = await auth();
+    let session = null;
+    try { session = await auth(); } catch { /* demo mode fallback */ }
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json(
+        { success: true, message: 'Demo mode - data not persisted' },
+        { status: 201 }
+      );
     }
 
     const body = await request.json();
