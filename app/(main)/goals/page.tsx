@@ -15,6 +15,7 @@ interface Goal {
   startDate?: string;
   endDate?: string;
   progress?: number;
+  sharedWith?: string[];
 }
 
 const DEMO_MEMBERS = [
@@ -36,6 +37,7 @@ export default function GoalsPage() {
   const [endDate, setEndDate] = useState('');
   const [owner, setOwner] = useState('나');
   const [showOwnerSuggestions, setShowOwnerSuggestions] = useState(false);
+  const [sharedWith, setSharedWith] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [levelFilter, setLevelFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -86,6 +88,7 @@ export default function GoalsPage() {
       owner: { name: owner },
       level: 'INDIVIDUAL',
       progress: 0,
+      sharedWith,
     };
     setGoals([newGoal, ...goals]);
     setTitle('');
@@ -93,6 +96,7 @@ export default function GoalsPage() {
     setStartDate('');
     setEndDate('');
     setOwner('나');
+    setSharedWith([]);
     setShowModal(false);
   }
 
@@ -268,6 +272,45 @@ export default function GoalsPage() {
                   >
                     {member.name}
                   </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">이 목표를 공유할 구성원 (선택)</label>
+            <div className="space-y-2">
+              {DEMO_MEMBERS.map(member => (
+                <label key={member.id} className="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={sharedWith.includes(member.name)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSharedWith([...sharedWith, member.name]);
+                      } else {
+                        setSharedWith(sharedWith.filter(m => m !== member.name));
+                      }
+                    }}
+                    className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">{member.name}</span>
+                </label>
+              ))}
+            </div>
+            {sharedWith.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {sharedWith.map(name => (
+                  <span key={name} className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
+                    {name}
+                    <button
+                      type="button"
+                      onClick={() => setSharedWith(sharedWith.filter(m => m !== name))}
+                      className="text-indigo-600 hover:text-indigo-800"
+                    >
+                      ×
+                    </button>
+                  </span>
                 ))}
               </div>
             )}
