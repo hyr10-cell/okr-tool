@@ -169,17 +169,16 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Stats Summary */}
-      {stats.total > 0 && (
+      {/* Stats Summary - Current Progress */}
+      {stats.total > 0 && (stats.onTrack > 0 || stats.offTrack > 0) && (
         <Card className="mb-8">
           <div className="space-y-3">
-            <h3 className="font-semibold text-gray-900">진행률</h3>
+            <h3 className="font-semibold text-gray-900">진행 중인 목표 현황</h3>
             <div className="space-y-2">
               {(() => {
-                const onTrackPct = Math.round((stats.onTrack / stats.total) * 100);
-                const offTrackPct = Math.round((stats.offTrack / stats.total) * 100);
-                const completedPct = Math.round((stats.completed / stats.total) * 100);
-                const pendingPct = 100 - onTrackPct - offTrackPct - completedPct;
+                const activeTotal = stats.onTrack + stats.offTrack;
+                const onTrackPct = activeTotal > 0 ? Math.round((stats.onTrack / activeTotal) * 100) : 0;
+                const offTrackPct = activeTotal > 0 ? 100 - onTrackPct : 0;
                 return (
                   <>
                     <div>
@@ -190,7 +189,7 @@ export default function DashboardPage() {
                       <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-green-500"
-                          style={{ width: `${(stats.onTrack / stats.total) * 100}%` }}
+                          style={{ width: `${onTrackPct}%` }}
                         />
                       </div>
                     </div>
@@ -203,33 +202,7 @@ export default function DashboardPage() {
                       <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-red-500"
-                          style={{ width: `${(stats.offTrack / stats.total) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm text-gray-600">완료</span>
-                        <span className="text-sm font-medium">{completedPct}%</span>
-                      </div>
-                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-blue-500"
-                          style={{ width: `${(stats.completed / stats.total) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm text-gray-600">대기</span>
-                        <span className="text-sm font-medium">{pendingPct}%</span>
-                      </div>
-                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-amber-500"
-                          style={{ width: `${(stats.pending / stats.total) * 100}%` }}
+                          style={{ width: `${offTrackPct}%` }}
                         />
                       </div>
                     </div>
