@@ -193,22 +193,10 @@ export default function GoalsPage() {
                     <p className="text-sm text-gray-600 mt-1">{goal.description}</p>
                   )}
 
-                  <div className="mt-3 mb-3">
-                    <div className="flex justify-between text-xs text-gray-500 mb-1">
-                      <span>진행률</span>
-                      <span>{goal.progress || 0}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className="h-full rounded-full bg-indigo-600"
-                        style={{ width: `${goal.progress || 0}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 mb-3">
                     <StatusBadge status={goal.status} />
                     <span className="text-xs text-gray-500">담당: {goal.owner.name}</span>
+                    <span className="text-xs text-gray-500 ml-auto">{goal.progress || 0}%</span>
                   </div>
                 </div>
               </div>
