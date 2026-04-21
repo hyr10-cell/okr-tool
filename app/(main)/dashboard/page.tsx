@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card } from '@/app/components/ui';
 import { formatDateTimeKo } from '@/app/lib/dateUtils';
 
@@ -16,9 +17,12 @@ interface Activity {
   title: string;
   description: string;
   timestamp: string;
+  goalId?: string;
+  feedbackId?: string;
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [stats, setStats] = useState({
     total: 0,
     onTrack: 0,
@@ -76,6 +80,7 @@ export default function DashboardPage() {
           title: 'API 보안 강화',
           description: '상태 변경 (순항 → 난항)',
           timestamp: '2024-03-20T14:30:00',
+          goalId: '2',
         },
         {
           id: '2',
@@ -83,6 +88,7 @@ export default function DashboardPage() {
           title: '서비스 성능 개선',
           description: '체크인 제출',
           timestamp: '2024-03-19T10:15:00',
+          goalId: '1',
         },
         {
           id: '3',
@@ -90,6 +96,7 @@ export default function DashboardPage() {
           title: '좋은 진행 방향입니다',
           description: '피드백 수신',
           timestamp: '2024-03-18T09:45:00',
+          goalId: '1',
         },
       ]);
     } finally {
@@ -181,7 +188,14 @@ export default function DashboardPage() {
               {activities.map(activity => (
                 <div
                   key={activity.id}
-                  className={`border-l-4 rounded-r p-4 ${getActivityColor(activity.type)}`}
+                  onClick={() => {
+                    if (activity.goalId) {
+                      router.push(`/goals/${activity.goalId}`);
+                    } else if (activity.feedbackId) {
+                      router.push(`/feedback/${activity.feedbackId}`);
+                    }
+                  }}
+                  className={`border-l-4 rounded-r p-4 ${getActivityColor(activity.type)} cursor-pointer hover:shadow-md transition-shadow`}
                 >
                   <div className="flex items-start gap-3">
                     <span className="text-xl">{getActivityIcon(activity.type)}</span>

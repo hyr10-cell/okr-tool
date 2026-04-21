@@ -4,47 +4,38 @@ import { NextRequest, NextResponse } from 'next/server';
 const DEMO_GOALS = [
   {
     id: '1',
-    title: 'API 보안 강화',
+    title: '서비스 성능 개선',
     description: '프로덕션 환경의 보안 취약점 해결',
     status: 'ON_TRACK',
-    level: 'TEAM',
-    owner: { name: '김개발' },
+    level: 'COMPANY',
+    owner: { name: '황유리' },
     cycle: { name: '2024 Q2' },
     checkIns: [
       {
         id: 'c1',
         progress: 65,
         status: 'ON_TRACK',
-        note: '현재 API 엔드포인트의 50%를 보안 검토 완료했습니다.',
+        note: '현재 성능 개선이 진행 중입니다.',
         createdAt: '2024-04-20T10:00:00Z',
         comments: [
           {
             id: 'cm1',
             content: '좋은 진행입니다!',
-            author: { name: '팀장' },
+            author: { name: '고종희' },
             createdAt: '2024-04-20T11:00:00Z',
           },
         ],
       },
     ],
+    sharedWith: ['고종희'],
   },
   {
     id: '2',
-    title: '마이크로서비스 아키텍처 전환',
+    title: 'API 보안 강화',
     description: '모놀리식 구조를 마이크로서비스로 전환',
-    status: 'PENDING',
-    level: 'COMPANY',
-    owner: { name: '이백엔드' },
-    cycle: { name: '2024 Q2' },
-    checkIns: [],
-  },
-  {
-    id: '3',
-    title: '사용자 경험 개선',
-    description: 'UI/UX 개선 및 성능 최적화',
     status: 'OFF_TRACK',
     level: 'TEAM',
-    owner: { name: '박프론트' },
+    owner: { name: '고종희' },
     cycle: { name: '2024 Q2' },
     checkIns: [
       {
@@ -56,6 +47,18 @@ const DEMO_GOALS = [
         comments: [],
       },
     ],
+    sharedWith: ['황유리'],
+  },
+  {
+    id: '3',
+    title: '코드 리뷰 프로세스 개선',
+    description: 'UI/UX 개선 및 성능 최적화',
+    status: 'PENDING',
+    level: 'TEAM',
+    owner: { name: '황유리' },
+    cycle: { name: '2024 Q2' },
+    checkIns: [],
+    sharedWith: [],
   },
 ];
 

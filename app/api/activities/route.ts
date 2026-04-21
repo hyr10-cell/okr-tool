@@ -7,6 +7,7 @@ const DEMO_ACTIVITIES = [
     title: 'API 보안 강화',
     description: '상태 변경 (순항 → 난항)',
     timestamp: '2024-03-20 14:30',
+    goalId: '2',
   },
   {
     id: '2',
@@ -14,6 +15,7 @@ const DEMO_ACTIVITIES = [
     title: '서비스 성능 개선',
     description: '체크인 제출',
     timestamp: '2024-03-19 10:15',
+    goalId: '1',
   },
   {
     id: '3',
@@ -21,6 +23,7 @@ const DEMO_ACTIVITIES = [
     title: '좋은 진행 방향입니다',
     description: '피드백 수신',
     timestamp: '2024-03-18 09:45',
+    goalId: '1',
   },
   {
     id: '4',
@@ -28,6 +31,7 @@ const DEMO_ACTIVITIES = [
     title: '마이크로서비스 아키텍처 전환',
     description: '새 목표 생성',
     timestamp: '2024-03-17 16:20',
+    goalId: '2',
   },
   {
     id: '5',
@@ -35,6 +39,7 @@ const DEMO_ACTIVITIES = [
     title: '사용자 경험 개선',
     description: '체크인 제출',
     timestamp: '2024-03-16 11:45',
+    goalId: '3',
   },
 ];
 

@@ -20,6 +20,7 @@ interface Organization {
 }
 
 export default function OrgPage() {
+  const [user, setUser] = useState<any>(null);
   const [orgs, setOrgs] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedOrgIds, setExpandedOrgIds] = useState<Set<string>>(new Set());
@@ -32,7 +33,13 @@ export default function OrgPage() {
   const [memberName, setMemberName] = useState('');
   const [memberRole, setMemberRole] = useState('');
 
+  const isAdmin = user?.role === 'ADMIN';
+
   useEffect(() => {
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
     fetchOrganizations();
   }, []);
 
@@ -217,44 +224,48 @@ export default function OrgPage() {
                         <span className="text-gray-700">
                           • {member.name} <span className="text-gray-500">({member.role})</span>
                         </span>
-                        <button
-                          onClick={() => handleDeleteMember(org.id, member.id)}
-                          className="text-xs text-red-600 hover:text-red-800"
-                        >
-                          삭제
-                        </button>
+                        {isAdmin && (
+                          <button
+                            onClick={() => handleDeleteMember(org.id, member.id)}
+                            className="text-xs text-red-600 hover:text-red-800"
+                          >
+                            삭제
+                          </button>
+                        )}
                       </div>
                     ))}
                   </div>
                 )}
               </div>
 
-              <div className="flex gap-2 flex-shrink-0">
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    setSelectedOrgId(org.id);
-                    setShowMemberModal(true);
-                  }}
-                  className="text-sm px-3 py-1"
-                >
-                  +구성원
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => handleEdit(org)}
-                  className="text-sm px-3 py-1"
-                >
-                  수정
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => handleDelete(org.id)}
-                  className="text-sm px-3 py-1"
-                >
-                  삭제
-                </Button>
-              </div>
+              {isAdmin && (
+                <div className="flex gap-2 flex-shrink-0">
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setSelectedOrgId(org.id);
+                      setShowMemberModal(true);
+                    }}
+                    className="text-sm px-3 py-1"
+                  >
+                    +구성원
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => handleEdit(org)}
+                    className="text-sm px-3 py-1"
+                  >
+                    수정
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    onClick={() => handleDelete(org.id)}
+                    className="text-sm px-3 py-1"
+                  >
+                    삭제
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </Card>
@@ -277,7 +288,7 @@ export default function OrgPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">조직도</h1>
-        <Button onClick={() => setShowModal(true)}>+ 새 조직</Button>
+        {isAdmin && <Button onClick={() => setShowModal(true)}>+ 새 조직</Button>}
       </div>
 
       {orgs.length === 0 ? (

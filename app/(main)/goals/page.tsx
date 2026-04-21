@@ -19,15 +19,16 @@ interface Goal {
 }
 
 const DEMO_MEMBERS = [
-  { id: '1', name: '나' },
-  { id: '2', name: '김팀장' },
-  { id: '3', name: '이백엔드' },
-  { id: '4', name: '박프론트' },
-  { id: '5', name: '정데이터' },
+  { id: '1', name: '나', dept: 'engineering' },
+  { id: '2', name: '김팀장', dept: 'engineering' },
+  { id: '3', name: '이백엔드', dept: 'engineering' },
+  { id: '4', name: '박프론트', dept: 'engineering' },
+  { id: '5', name: '정데이터', dept: 'engineering' },
 ];
 
 export default function GoalsPage() {
   const router = useRouter();
+  const [user, setUser] = useState<any>(null);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -43,12 +44,18 @@ export default function GoalsPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
     fetchGoals();
   }, []);
 
   async function fetchGoals() {
     try {
-      const res = await fetch('/api/goals');
+      const currentUser = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!) : null;
+      const url = currentUser ? `/api/goals?user=${encodeURIComponent(currentUser.name)}` : '/api/goals';
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         const goals = (data.data || []).map((goal: Goal) => {
@@ -67,7 +74,7 @@ export default function GoalsPage() {
     }
   }
 
-  function handleCreateGoal() {
+  async function handleCreateGoal() {
     if (!title.trim() || !startDate || !endDate) {
       alert('필수 항목을 모두 입력해주세요');
       return;
@@ -90,7 +97,20 @@ export default function GoalsPage() {
       progress: 0,
       sharedWith,
     };
-    setGoals([newGoal, ...goals]);
+
+    try {
+      await fetch('/api/goals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newGoal),
+      });
+    } catch (err) {
+      console.error('목표 저장 실패:', err);
+    }
+
+    const updatedGoals = [newGoal, ...goals];
+    setGoals(updatedGoals);
+    localStorage.setItem('userGoals', JSON.stringify(updatedGoals));
     setTitle('');
     setDescription('');
     setStartDate('');
@@ -105,6 +125,10 @@ export default function GoalsPage() {
         m.name.toLowerCase().includes(owner.toLowerCase())
       )
     : [];
+
+  const departmentMembers = user?.org
+    ? DEMO_MEMBERS.filter(m => m.dept === user.org)
+    : DEMO_MEMBERS;
 
   const filteredGoals = goals.filter((goal) => {
     if (statusFilter && goal.status !== statusFilter) return false;
@@ -278,9 +302,9 @@ export default function GoalsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">이 목표를 공유할 구성원 (선택)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">리뷰어 (선택)</label>
             <div className="space-y-2">
-              {DEMO_MEMBERS.map(member => (
+              {departmentMembers.map(member => (
                 <label key={member.id} className="flex items-center cursor-pointer">
                   <input
                     type="checkbox"

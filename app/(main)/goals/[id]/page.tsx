@@ -31,12 +31,19 @@ const STATUS_LABEL: Record<string, string> = {
 export default function GoalDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const resolvedParams = use(params);
+  const [user, setUser] = useState<any>(null);
   const [goal, setGoal] = useState<Goal | null>(null);
   const [loading, setLoading] = useState(true);
   const [comment, setComment] = useState('');
   const [activeCheckinId, setActiveCheckinId] = useState<string | null>(null);
 
-  useEffect(() => { fetchGoal(); }, []);
+  useEffect(() => {
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
+    fetchGoal();
+  }, []);
 
   async function fetchGoal() {
     const res = await fetch(`/api/goals/${resolvedParams.id}`);
