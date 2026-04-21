@@ -14,6 +14,7 @@ interface Goal {
   description?: string;
   startDate?: string;
   endDate?: string;
+  progress?: number;
 }
 
 const DEMO_MEMBERS = [
@@ -77,6 +78,7 @@ export default function GoalsPage() {
       status: 'PENDING',
       owner: { name: owner },
       level: 'INDIVIDUAL',
+      progress: 0,
     };
     setGoals([newGoal, ...goals]);
     setTitle('');
@@ -183,7 +185,21 @@ export default function GoalsPage() {
                   {goal.description && (
                     <p className="text-sm text-gray-600 mt-1">{goal.description}</p>
                   )}
-                  <div className="flex items-center gap-3 mt-3">
+
+                  <div className="mt-3 mb-3">
+                    <div className="flex justify-between text-xs text-gray-500 mb-1">
+                      <span>진행률</span>
+                      <span>{goal.progress || 0}%</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="h-full rounded-full bg-indigo-600"
+                        style={{ width: `${goal.progress || 0}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
                     <StatusBadge status={goal.status} />
                     <span className="text-xs text-gray-500">담당: {goal.owner.name}</span>
                   </div>
