@@ -49,7 +49,14 @@ export default function GoalsPage() {
       const res = await fetch('/api/goals');
       if (res.ok) {
         const data = await res.json();
-        setGoals(data.data || []);
+        const goals = (data.data || []).map((goal: Goal) => {
+          // 진행률이 100%면 자동으로 완료 상태로 변경
+          if ((goal.progress ?? 0) === 100 && goal.status !== 'COMPLETED') {
+            return { ...goal, status: 'COMPLETED' };
+          }
+          return goal;
+        });
+        setGoals(goals);
       }
     } catch (err) {
       console.error('목표 로드 실패:', err);

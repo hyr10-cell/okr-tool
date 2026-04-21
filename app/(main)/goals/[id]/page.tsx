@@ -42,7 +42,15 @@ export default function GoalDetailPage({ params }: { params: Promise<{ id: strin
     const res = await fetch(`/api/goals/${resolvedParams.id}`);
     if (res.ok) {
       const data = await res.json();
-      setGoal(data.data);
+      let goal = data.data;
+
+      // 진행률이 100%면 자동으로 완료 상태로 변경
+      const latestProgress = goal.checkIns[0]?.progress ?? 0;
+      if (latestProgress === 100 && goal.status !== 'COMPLETED') {
+        goal = { ...goal, status: 'COMPLETED' };
+      }
+
+      setGoal(goal);
     }
     setLoading(false);
   }
