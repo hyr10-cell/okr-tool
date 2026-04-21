@@ -7,9 +7,18 @@ export default function CheckInPage({ params }: { params: Promise<{ id: string }
   const router = useRouter();
   const resolvedParams = use(params);
   const [progress, setProgress] = useState(0);
-  const [status, setStatus] = useState<'ON_TRACK' | 'OFF_TRACK'>('ON_TRACK');
+  const [status, setStatus] = useState<'PENDING' | 'ON_TRACK' | 'OFF_TRACK' | 'COMPLETED'>('ON_TRACK');
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const getAutoStatus = (prog: number) => {
+    if (prog === 0) return 'PENDING';
+    if (prog === 100) return 'COMPLETED';
+    return null;
+  };
+
+  const autoStatus = getAutoStatus(progress);
+  const needsManualStatus = progress > 0 && progress < 100;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -35,32 +44,48 @@ export default function CheckInPage({ params }: { params: Promise<{ id: string }
           <label className="block text-sm font-medium text-gray-700 mb-2">진행률 ({progress}%)</label>
           <input
             type="range" min={0} max={100} value={progress}
-            onChange={(e) => setProgress(Number(e.target.value))}
+            onChange={(e) => {
+              const newProgress = Number(e.target.value);
+              setProgress(newProgress);
+              const auto = getAutoStatus(newProgress);
+              if (auto) {
+                setStatus(auto as 'PENDING' | 'ON_TRACK' | 'OFF_TRACK' | 'COMPLETED');
+              }
+            }}
             className="w-full accent-indigo-600"
           />
           <div className="flex justify-between text-xs text-gray-400 mt-1">
             <span>0%</span><span>50%</span><span>100%</span>
           </div>
+          {autoStatus && (
+            <p className="text-xs text-indigo-600 mt-2">
+              진행률에 따라 상태가 자동으로 설정됩니다: {
+                autoStatus === 'PENDING' ? '대기' : '완료'
+              }
+            </p>
+          )}
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">현재 상태</label>
-          <div className="flex gap-3">
-            {(['ON_TRACK', 'OFF_TRACK'] as const).map((s) => (
-              <button
-                key={s} type="button"
-                onClick={() => setStatus(s)}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium border transition ${
-                  status === s
-                    ? s === 'ON_TRACK' ? 'bg-green-600 text-white border-green-600' : 'bg-red-600 text-white border-red-600'
-                    : 'bg-white text-gray-600 border-gray-300'
-                }`}
-              >
-                {s === 'ON_TRACK' ? '✅ 순항' : '⚠️ 난항'}
-              </button>
-            ))}
+        {needsManualStatus && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">현재 상태</label>
+            <div className="flex gap-3">
+              {(['ON_TRACK', 'OFF_TRACK'] as const).map((s) => (
+                <button
+                  key={s} type="button"
+                  onClick={() => setStatus(s)}
+                  className={`flex-1 py-2 rounded-lg text-sm font-medium border transition ${
+                    status === s
+                      ? s === 'ON_TRACK' ? 'bg-green-600 text-white border-green-600' : 'bg-red-600 text-white border-red-600'
+                      : 'bg-white text-gray-600 border-gray-300'
+                  }`}
+                >
+                  {s === 'ON_TRACK' ? '✅ 순항' : '⚠️ 난항'}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">이번 기간 활동 (선택)</label>
