@@ -175,57 +175,67 @@ export default function DashboardPage() {
           <div className="space-y-3">
             <h3 className="font-semibold text-gray-900">진행률</h3>
             <div className="space-y-2">
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm text-gray-600">순항</span>
-                  <span className="text-sm font-medium">{Math.round((stats.onTrack / stats.total) * 100)}%</span>
-                </div>
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-green-500"
-                    style={{ width: `${(stats.onTrack / stats.total) * 100}%` }}
-                  />
-                </div>
-              </div>
+              {(() => {
+                const onTrackPct = Math.round((stats.onTrack / stats.total) * 100);
+                const offTrackPct = Math.round((stats.offTrack / stats.total) * 100);
+                const completedPct = Math.round((stats.completed / stats.total) * 100);
+                const pendingPct = 100 - onTrackPct - offTrackPct - completedPct;
+                return (
+                  <>
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm text-gray-600">순항</span>
+                        <span className="text-sm font-medium">{onTrackPct}%</span>
+                      </div>
+                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-green-500"
+                          style={{ width: `${(stats.onTrack / stats.total) * 100}%` }}
+                        />
+                      </div>
+                    </div>
 
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm text-gray-600">난항</span>
-                  <span className="text-sm font-medium">{Math.round((stats.offTrack / stats.total) * 100)}%</span>
-                </div>
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-red-500"
-                    style={{ width: `${(stats.offTrack / stats.total) * 100}%` }}
-                  />
-                </div>
-              </div>
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm text-gray-600">난항</span>
+                        <span className="text-sm font-medium">{offTrackPct}%</span>
+                      </div>
+                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-red-500"
+                          style={{ width: `${(stats.offTrack / stats.total) * 100}%` }}
+                        />
+                      </div>
+                    </div>
 
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm text-gray-600">완료</span>
-                  <span className="text-sm font-medium">{Math.round((stats.completed / stats.total) * 100)}%</span>
-                </div>
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-blue-500"
-                    style={{ width: `${(stats.completed / stats.total) * 100}%` }}
-                  />
-                </div>
-              </div>
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm text-gray-600">완료</span>
+                        <span className="text-sm font-medium">{completedPct}%</span>
+                      </div>
+                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-500"
+                          style={{ width: `${(stats.completed / stats.total) * 100}%` }}
+                        />
+                      </div>
+                    </div>
 
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm text-gray-600">대기</span>
-                  <span className="text-sm font-medium">{Math.round((stats.pending / stats.total) * 100)}%</span>
-                </div>
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-amber-500"
-                    style={{ width: `${(stats.pending / stats.total) * 100}%` }}
-                  />
-                </div>
-              </div>
+                    <div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-sm text-gray-600">대기</span>
+                        <span className="text-sm font-medium">{pendingPct}%</span>
+                      </div>
+                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-amber-500"
+                          style={{ width: `${(stats.pending / stats.total) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
         </Card>
