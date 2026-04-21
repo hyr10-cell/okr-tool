@@ -1,104 +1,250 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Card } from '@/app/components/ui';
 
-interface RevieweeGoal {
+interface Goal {
   id: string;
   title: string;
   status: string;
-  checkIns: { progress: number }[];
 }
 
-interface Reviewee {
+interface Activity {
   id: string;
-  name: string;
-  goals: RevieweeGoal[];
+  type: 'goal_status' | 'checkin' | 'feedback';
+  title: string;
+  description: string;
+  timestamp: string;
 }
-
-const STATUS_COLOR: Record<string, string> = {
-  PENDING: 'bg-gray-100 text-gray-600',
-  ON_TRACK: 'bg-green-100 text-green-700',
-  OFF_TRACK: 'bg-red-100 text-red-700',
-  COMPLETED: 'bg-blue-100 text-blue-700',
-};
-const STATUS_LABEL: Record<string, string> = {
-  PENDING: '대기', ON_TRACK: '순항', OFF_TRACK: '난항', COMPLETED: '완료',
-};
 
 export default function DashboardPage() {
-  const router = useRouter();
-  const [reviewees, setReviewees] = useState<Reviewee[]>([]);
+  const [stats, setStats] = useState({
+    total: 0,
+    onTrack: 0,
+    offTrack: 0,
+    completed: 0,
+    pending: 0,
+  });
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/dashboard')
-      .then(r => r.json())
-      .then(d => {
-        setReviewees(d.data || []);
-        setLoading(false);
-      });
+    fetchDashboardData();
   }, []);
 
-  if (loading) return <div className="text-center py-12 text-gray-500">로드 중...</div>;
+  async function fetchDashboardData() {
+    try {
+      const res = await fetch('/api/goals');
+      if (res.ok) {
+        const data = await res.json();
+        const goals = data.data || [];
 
-  const offTrackCount = reviewees.flatMap(r => r.goals).filter(g => g.status === 'OFF_TRACK').length;
+        const newStats = {
+          total: goals.length,
+          onTrack: goals.filter((g: Goal) => g.status === 'ON_TRACK').length,
+          offTrack: goals.filter((g: Goal) => g.status === 'OFF_TRACK').length,
+          completed: goals.filter((g: Goal) => g.status === 'COMPLETED').length,
+          pending: goals.filter((g: Goal) => g.status === 'PENDING').length,
+        };
+        setStats(newStats);
+      }
+    } catch (err) {
+      console.error('대시보드 데이터 로드 실패:', err);
+      // Demo data
+      setStats({
+        total: 8,
+        onTrack: 3,
+        offTrack: 2,
+        completed: 3,
+        pending: 0,
+      });
+    }
+
+    try {
+      const res = await fetch('/api/activities');
+      if (res.ok) {
+        const data = await res.json();
+        setActivities(data.data || []);
+      }
+    } catch (err) {
+      // Demo data
+      setActivities([
+        {
+          id: '1',
+          type: 'goal_status',
+          title: 'API 보안 강화',
+          description: '상태 변경 (순항 → 난항)',
+          timestamp: '2024-03-20 14:30',
+        },
+        {
+          id: '2',
+          type: 'checkin',
+          title: '서비스 성능 개선',
+          description: '체크인 제출',
+          timestamp: '2024-03-19 10:15',
+        },
+        {
+          id: '3',
+          type: 'feedback',
+          title: '좋은 진행 방향입니다',
+          description: '피드백 수신',
+          timestamp: '2024-03-18 09:45',
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const getActivityIcon = (type: string) => {
+    switch (type) {
+      case 'goal_status':
+        return '🎯';
+      case 'checkin':
+        return '✅';
+      case 'feedback':
+        return '💬';
+      default:
+        return '📌';
+    }
+  };
+
+  const getActivityColor = (type: string) => {
+    switch (type) {
+      case 'goal_status':
+        return 'border-l-indigo-500 bg-indigo-50';
+      case 'checkin':
+        return 'border-l-green-500 bg-green-50';
+      case 'feedback':
+        return 'border-l-blue-500 bg-blue-50';
+      default:
+        return 'border-l-gray-500 bg-gray-50';
+    }
+  };
+
+  if (loading) {
+    return <div className="text-center py-12">로드 중...</div>;
+  }
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">리뷰어 대시보드</h1>
-      {offTrackCount > 0 && (
-        <div className="mb-6 bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
-          ⚠️ 난항 목표 {offTrackCount}건이 있습니다. 확인이 필요합니다.
-        </div>
-      )}
+      <h1 className="text-3xl font-bold text-gray-900 mb-6">나의 성장 대시보드</h1>
 
-      {reviewees.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">담당자가 없습니다.</div>
-      ) : (
-        <div className="space-y-6">
-          {reviewees.map((reviewee) => (
-            <div key={reviewee.id} className="bg-white rounded-lg border border-gray-200 p-5">
-              <h2 className="font-semibold text-gray-900 mb-4">{reviewee.name}</h2>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5 mb-8">
+        <Card>
+          <div className="space-y-2">
+            <p className="text-sm text-gray-600">총 목표</p>
+            <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
+          </div>
+        </Card>
 
-              {reviewee.goals.length === 0 ? (
-                <p className="text-sm text-gray-400">목표 없음</p>
-              ) : (
-                <div className="space-y-3">
-                  {reviewee.goals
-                    .sort((a, b) => (a.status === 'OFF_TRACK' ? -1 : 1))
-                    .map((goal) => {
-                      const progress = goal.checkIns[0]?.progress ?? 0;
-                      return (
-                        <div
-                          key={goal.id}
-                          onClick={() => router.push(`/goals/${goal.id}`)}
-                          className={`rounded-lg p-3 cursor-pointer transition hover:opacity-80 ${
-                            goal.status === 'OFF_TRACK' ? 'bg-red-50 border border-red-200' : 'bg-gray-50'
-                          }`}
-                        >
-                          <div className="flex justify-between items-center mb-1">
-                            <span className="text-sm font-medium text-gray-800">{goal.title}</span>
-                            <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLOR[goal.status]}`}>
-                              {STATUS_LABEL[goal.status]}
-                            </span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-1.5">
-                            <div
-                              className={`h-1.5 rounded-full ${goal.status === 'OFF_TRACK' ? 'bg-red-500' : 'bg-indigo-500'}`}
-                              style={{ width: `${progress}%` }}
-                            />
-                          </div>
-                          <div className="text-right text-xs text-gray-400 mt-1">{progress}%</div>
-                        </div>
-                      );
-                    })}
+        <Card>
+          <div className="space-y-2">
+            <p className="text-sm text-gray-600">순항</p>
+            <p className="text-3xl font-bold text-green-600">{stats.onTrack}</p>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="space-y-2">
+            <p className="text-sm text-gray-600">난항</p>
+            <p className="text-3xl font-bold text-red-600">{stats.offTrack}</p>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="space-y-2">
+            <p className="text-sm text-gray-600">완료</p>
+            <p className="text-3xl font-bold text-blue-600">{stats.completed}</p>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="space-y-2">
+            <p className="text-sm text-gray-600">대기</p>
+            <p className="text-3xl font-bold text-amber-600">{stats.pending}</p>
+          </div>
+        </Card>
+      </div>
+
+      {/* Stats Summary */}
+      {stats.total > 0 && (
+        <Card className="mb-8">
+          <div className="space-y-3">
+            <h3 className="font-semibold text-gray-900">진행률</h3>
+            <div className="space-y-2">
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-sm text-gray-600">순항</span>
+                  <span className="text-sm font-medium">{Math.round((stats.onTrack / stats.total) * 100)}%</span>
                 </div>
-              )}
+                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-green-500"
+                    style={{ width: `${(stats.onTrack / stats.total) * 100}%` }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-sm text-gray-600">난항</span>
+                  <span className="text-sm font-medium">{Math.round((stats.offTrack / stats.total) * 100)}%</span>
+                </div>
+                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-red-500"
+                    style={{ width: `${(stats.offTrack / stats.total) * 100}%` }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-sm text-gray-600">완료</span>
+                  <span className="text-sm font-medium">{Math.round((stats.completed / stats.total) * 100)}%</span>
+                </div>
+                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-blue-500"
+                    style={{ width: `${(stats.completed / stats.total) * 100}%` }}
+                  />
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
+          </div>
+        </Card>
       )}
+
+      {/* Recent Activities */}
+      <Card>
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold text-gray-900">최근 활동</h2>
+
+          {activities.length === 0 ? (
+            <p className="text-sm text-gray-500 py-4">아직 활동이 없습니다.</p>
+          ) : (
+            <div className="space-y-3 pt-2">
+              {activities.map(activity => (
+                <div
+                  key={activity.id}
+                  className={`border-l-4 rounded-r p-4 ${getActivityColor(activity.type)}`}
+                >
+                  <div className="flex items-start gap-3">
+                    <span className="text-xl">{getActivityIcon(activity.type)}</span>
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">{activity.title}</p>
+                      <p className="text-sm text-gray-600 mt-1">{activity.description}</p>
+                      <p className="text-xs text-gray-500 mt-1">{activity.timestamp}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </Card>
     </div>
   );
 }

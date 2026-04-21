@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { StatusBadge, Card, Button, Modal, FormInput } from '@/app/components/ui';
+import { GoalDetail } from '@/app/components/goals/GoalDetail';
+import { WeightModal } from '@/app/components/goals/WeightModal';
 
 interface Goal {
   id: string;
@@ -9,7 +11,10 @@ interface Goal {
   status: string;
   owner: { name: string };
   level: string;
-  checkIns: { progress: number; status: string }[];
+  weight?: number;
+  description?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -27,7 +32,13 @@ export default function GoalsPage() {
   const router = useRouter();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('ALL');
+  const [showModal, setShowModal] = useState(false);
+  const [showWeightModal, setShowWeightModal] = useState(false);
+  const [title, setTitle] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [levelFilter, setLevelFilter] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedGoalId, setSelectedGoalId] = useState<string | null>(null);
 
   useEffect(() => { fetchGoals(); }, []);
 
@@ -47,13 +58,13 @@ export default function GoalsPage() {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">나의 목표</h1>
-        <button
-          onClick={() => router.push('/goals/new')}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-        >
-          + 새 목표
-        </button>
+        <h1 className="text-3xl font-bold text-gray-900">목표</h1>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={() => setShowWeightModal(true)}>
+            ⚖️ 가중치 설정
+          </Button>
+          <Button onClick={() => setShowModal(true)}>+ 새 목표</Button>
+        </div>
       </div>
 
       <div className="flex gap-2 mb-4">
@@ -106,6 +117,50 @@ export default function GoalsPage() {
             );
           })}
         </div>
+      )}
+
+      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="새 목표 만들기" onConfirm={handleCreateGoal} confirmText="만들기">
+        <FormInput
+          label="목표명"
+          value={title}
+          onChange={setTitle}
+          placeholder="목표명을 입력하세요"
+          onKeyDown={(e) => e.key === 'Enter' && handleCreateGoal()}
+        />
+      </Modal>
+
+      {/* Weight Management Modal */}
+      <WeightModal
+        isOpen={showWeightModal}
+        onClose={() => setShowWeightModal(false)}
+        goals={goals}
+        onSubmit={(weights) => {
+          setGoals(goals.map(g => ({
+            ...g,
+            weight: weights[g.id] || g.weight || 0,
+          })));
+        }}
+      />
+
+      {/* Goal Detail Sidebar */}
+      {selectedGoalId && (
+        <GoalDetail
+          goal={filteredGoals.find((g) => g.id === selectedGoalId)!}
+          onClose={() => setSelectedGoalId(null)}
+          onCheckIn={() => {
+            console.log('Check-in clicked for goal:', selectedGoalId);
+          }}
+          onWriteFeedback={() => {
+            console.log('Write feedback clicked for goal:', selectedGoalId);
+          }}
+          onEdit={(data) => {
+            setGoals(goals.map(g =>
+              g.id === selectedGoalId
+                ? { ...g, ...data }
+                : g
+            ));
+          }}
+        />
       )}
     </div>
   );
