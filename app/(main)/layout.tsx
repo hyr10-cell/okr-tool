@@ -38,9 +38,6 @@ export default function MainLayout({
           <a href="/goals" className="block rounded px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
             목표
           </a>
-          <a href="/cycles" className="block rounded px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
-            사이클
-          </a>
           <a href="/feedback" className="block rounded px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100">
             피드백
           </a>
