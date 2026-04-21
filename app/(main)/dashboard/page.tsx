@@ -169,51 +169,6 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Stats Summary - Current Progress */}
-      {stats.total > 0 && (stats.onTrack > 0 || stats.offTrack > 0) && (
-        <Card className="mb-8">
-          <div className="space-y-3">
-            <h3 className="font-semibold text-gray-900">진행 중인 목표 현황</h3>
-            <div className="space-y-2">
-              {(() => {
-                const activeTotal = stats.onTrack + stats.offTrack;
-                const onTrackPct = activeTotal > 0 ? Math.round((stats.onTrack / activeTotal) * 100) : 0;
-                const offTrackPct = activeTotal > 0 ? 100 - onTrackPct : 0;
-                return (
-                  <>
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm text-gray-600">순항</span>
-                        <span className="text-sm font-medium">{onTrackPct}%</span>
-                      </div>
-                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-green-500"
-                          style={{ width: `${onTrackPct}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span className="text-sm text-gray-600">난항</span>
-                        <span className="text-sm font-medium">{offTrackPct}%</span>
-                      </div>
-                      <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-red-500"
-                          style={{ width: `${offTrackPct}%` }}
-                        />
-                      </div>
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-          </div>
-        </Card>
-      )}
-
       {/* Recent Activities */}
       <Card>
         <div className="space-y-4">
