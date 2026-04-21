@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { StatusBadge, Card, Button, Modal, FormInput } from '@/app/components/ui';
-import { WeightModal } from '@/app/components/goals/WeightModal';
 
 interface Goal {
   id: string;
@@ -30,7 +29,6 @@ export default function GoalsPage() {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [showWeightModal, setShowWeightModal] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -110,12 +108,7 @@ export default function GoalsPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">목표</h1>
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => setShowWeightModal(true)}>
-            ⚖️ 가중치 설정
-          </Button>
-          <Button onClick={() => setShowModal(true)}>+ 새 목표</Button>
-        </div>
+        <Button onClick={() => setShowModal(true)}>+ 새 목표</Button>
       </div>
 
       {/* 필터 영역 */}
@@ -270,19 +263,6 @@ export default function GoalsPage() {
           </div>
         </div>
       </Modal>
-
-      {/* Weight Management Modal */}
-      <WeightModal
-        isOpen={showWeightModal}
-        onClose={() => setShowWeightModal(false)}
-        goals={goals}
-        onSubmit={(weights) => {
-          setGoals(goals.map(g => ({
-            ...g,
-            weight: weights[g.id] || g.weight || 0,
-          })));
-        }}
-      />
     </div>
   );
 }
