@@ -34,7 +34,7 @@ export default function FeedbackPage() {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [filterDirection, setFilterDirection] = useState<'all' | 'received' | 'sent'>('received');
+  const [filterDirection, setFilterDirection] = useState<'all' | 'received' | 'sent'>('all');
   const [filterType, setFilterType] = useState<'all' | 'KEEP_GOING' | 'IMPROVE'>('all');
   const [recipientName, setRecipientName] = useState('');
   const [feedbackType, setFeedbackType] = useState<'KEEP_GOING' | 'IMPROVE'>('KEEP_GOING');
