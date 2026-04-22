@@ -43,18 +43,34 @@ export default function AdminMembersPage() {
   async function fetchMembers() {
     try {
       const res = await fetch('/api/org/members');
+      let apiMembers: Member[] = [];
       if (res.ok) {
         const data = await res.json();
-        setMembers(data.data || []);
+        apiMembers = data.data || [];
       }
+
+      // localStorage에서 사용자가 import한 구성원 로드
+      const userMembersStr = localStorage.getItem('userMembers');
+      const userMembers = userMembersStr ? JSON.parse(userMembersStr) : [];
+
+      // API 구성원과 사용자 구성원 병합
+      const allMembers = [...userMembers, ...apiMembers];
+
+      // 중복 제거 (같은 id는 userMembers 버전 사용)
+      const uniqueMembers = Array.from(
+        new Map(allMembers.map(m => [m.id, m])).values()
+      );
+
+      setMembers(uniqueMembers);
     } catch (err) {
       console.error('구성원 로드 실패:', err);
       // Demo data
-      setMembers([
+      const demoMembers = [
         { id: '1', name: '황유리', email: 'hyr@example.com', dept: '개발팀' },
         { id: '2', name: '고종희', email: 'gkh@example.com', dept: '개발팀' },
         { id: '3', name: '김개발', email: 'kim@example.com', dept: '마케팅팀' },
-      ]);
+      ];
+      setMembers(demoMembers);
     } finally {
       setLoading(false);
     }
@@ -66,12 +82,23 @@ export default function AdminMembersPage() {
       return;
     }
 
+    const userMembersStr = localStorage.getItem('userMembers');
+    const userMembers = userMembersStr ? JSON.parse(userMembersStr) : [];
+
+    let updatedUserMembers: Member[];
+    let updatedMembers: Member[];
+
     if (editingMemberId) {
-      setMembers(members.map(m =>
+      updatedUserMembers = userMembers.map((m: Member) =>
         m.id === editingMemberId
           ? { ...m, name, email, dept }
           : m
-      ));
+      );
+      updatedMembers = members.map(m =>
+        m.id === editingMemberId
+          ? { ...m, name, email, dept }
+          : m
+      );
     } else {
       const newMember: Member = {
         id: Date.now().toString(),
@@ -79,9 +106,12 @@ export default function AdminMembersPage() {
         email,
         dept,
       };
-      setMembers([...members, newMember]);
+      updatedUserMembers = [...userMembers, newMember];
+      updatedMembers = [...members, newMember];
     }
 
+    setMembers(updatedMembers);
+    localStorage.setItem('userMembers', JSON.stringify(updatedUserMembers));
     resetForm();
   }
 
@@ -104,7 +134,14 @@ export default function AdminMembersPage() {
 
   function handleDelete(memberId: string) {
     if (confirm('이 구성원을 삭제하시겠습니까?')) {
-      setMembers(members.filter(m => m.id !== memberId));
+      const updatedMembers = members.filter(m => m.id !== memberId);
+      setMembers(updatedMembers);
+
+      // localStorage도 업데이트
+      const userMembersStr = localStorage.getItem('userMembers');
+      const userMembers = userMembersStr ? JSON.parse(userMembersStr) : [];
+      const updatedUserMembers = userMembers.filter((m: Member) => m.id !== memberId);
+      localStorage.setItem('userMembers', JSON.stringify(updatedUserMembers));
     }
   }
 
@@ -142,6 +179,11 @@ export default function AdminMembersPage() {
     }
 
     if (newMembers.length > 0) {
+      const userMembersStr = localStorage.getItem('userMembers');
+      const userMembers = userMembersStr ? JSON.parse(userMembersStr) : [];
+      const updatedUserMembers = [...userMembers, ...newMembers];
+      localStorage.setItem('userMembers', JSON.stringify(updatedUserMembers));
+
       const updatedMembers = [...members, ...newMembers];
       setMembers(updatedMembers);
       setImportResult({ success, failed });
