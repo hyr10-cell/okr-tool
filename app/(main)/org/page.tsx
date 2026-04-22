@@ -234,7 +234,7 @@ export default function OrgPage() {
     const hasChildren = org.children && org.children.length > 0;
 
     // 같은 부서의 구성원만 필터링
-    const visibleMembers = org.members.filter(m => m.dept === user?.org || isAdmin);
+    const visibleMembers = org.members.filter(m => (m.dept === user?.org || m.org === user?.org) || isAdmin);
 
     return (
       <div key={org.id} style={{ marginLeft: `${level * 24}px` }} className="mb-4">
