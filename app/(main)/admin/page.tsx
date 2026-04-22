@@ -39,8 +39,8 @@ export default function AdminPage() {
       });
 
       // Organization 객체 생성
-      const orgs = Object.entries(deptMap).map(([deptName, members], idx) => ({
-        id: `org_${idx}`,
+      const newOrgs = Object.entries(deptMap).map(([deptName, members], idx) => ({
+        id: Date.now().toString() + idx,
         name: deptName,
         lead: members[0]?.name || undefined,
         members: members.map((m: any) => ({
@@ -53,9 +53,12 @@ export default function AdminPage() {
       }));
 
       // localStorage에 저장
-      localStorage.setItem('userOrgs', JSON.stringify(orgs));
+      const existingOrgsStr = localStorage.getItem('userOrgs');
+      const existingOrgs = existingOrgsStr ? JSON.parse(existingOrgsStr) : [];
+      const mergedOrgs = [...existingOrgs, ...newOrgs];
+      localStorage.setItem('userOrgs', JSON.stringify(mergedOrgs));
 
-      const deptCount = Object.keys(deptMap).length;
+      const deptCount = newOrgs.length;
       setMessage(`✅ ${deptCount}개 부서, ${userMembers.length}명의 구성원이 조직도에 추가됨`);
 
       setTimeout(() => {
