@@ -14,7 +14,6 @@ interface Member {
 interface Organization {
   id: string;
   name: string;
-  lead?: string;
   parentId?: string;
   members: Member[];
   children?: Organization[];
@@ -30,7 +29,6 @@ export default function OrgPage() {
   const [editingOrgId, setEditingOrgId] = useState<string | null>(null);
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(null);
   const [orgName, setOrgName] = useState('');
-  const [leadName, setLeadName] = useState('');
   const [memberName, setMemberName] = useState('');
   const [memberEmail, setMemberEmail] = useState('');
 
@@ -67,7 +65,10 @@ export default function OrgPage() {
 
       // 현재 사용자의 부서에 해당하는 조직만 필터링
       const currentUser = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!) : null;
-      const filteredOrgs = currentUser?.org
+      // 관리자는 모든 조직 조회 가능, 일반 사용자는 자신의 부서만 표시
+      const filteredOrgs = currentUser?.role === 'ADMIN'
+        ? uniqueOrgs
+        : currentUser?.org
         ? uniqueOrgs.filter(org => org.name === currentUser.org)
         : uniqueOrgs;
 
@@ -103,21 +104,44 @@ export default function OrgPage() {
     let updatedOrgs: Organization[];
 
     if (editingOrgId) {
+      // 기존 조직 이름 찾기
+      const oldOrg = userOrgs.find((o: Organization) => o.id === editingOrgId);
+      const oldOrgName = oldOrg?.name;
+
+      // 조직 이름 변경
       updatedUserOrgs = userOrgs.map((o: Organization) =>
         o.id === editingOrgId
-          ? { ...o, name: orgName, lead: leadName || undefined }
+          ? { ...o, name: orgName }
           : o
       );
       updatedOrgs = orgs.map(o =>
         o.id === editingOrgId
-          ? { ...o, name: orgName, lead: leadName || undefined }
+          ? { ...o, name: orgName }
           : o
       );
+
+      // 구성원의 부서 정보도 함께 업데이트
+      if (oldOrgName && oldOrgName !== orgName) {
+        const userMembersStr = localStorage.getItem('userMembers');
+        const userMembers = userMembersStr ? JSON.parse(userMembersStr) : [];
+
+        const updatedUserMembers = userMembers.map((m: any) => {
+          const memberDepts = Array.isArray(m.dept) ? m.dept : (m.dept ? [m.dept] : []);
+          const newDepts = memberDepts.map((dept: string) =>
+            dept === oldOrgName ? orgName : dept
+          );
+          return {
+            ...m,
+            dept: Array.isArray(m.dept) ? newDepts : (newDepts[0] || m.dept),
+          };
+        });
+
+        localStorage.setItem('userMembers', JSON.stringify(updatedUserMembers));
+      }
     } else {
       const newOrg: Organization = {
         id: Date.now().toString(),
         name: orgName,
-        lead: leadName || undefined,
         members: [],
         children: [],
       };
@@ -185,7 +209,6 @@ export default function OrgPage() {
 
   function resetForm() {
     setOrgName('');
-    setLeadName('');
     setEditingOrgId(null);
     setShowModal(false);
   }
@@ -193,7 +216,6 @@ export default function OrgPage() {
   function handleEdit(org: Organization) {
     setEditingOrgId(org.id);
     setOrgName(org.name);
-    setLeadName(org.lead || '');
     setShowModal(true);
   }
 
@@ -254,8 +276,7 @@ export default function OrgPage() {
                   <h3 className="font-semibold text-gray-900 text-lg">{org.name}</h3>
                 </div>
 
-                <div className="mt-2 space-y-1 text-sm text-gray-600">
-                  <p>팀장: {org.lead || '(미배정)'}</p>
+                <div className="mt-2 text-sm text-gray-600">
                   <p>구성원: {visibleMembers.length}명</p>
                 </div>
 
@@ -359,13 +380,6 @@ export default function OrgPage() {
             onChange={setOrgName}
             placeholder="예: 개발팀"
             required
-          />
-
-          <FormInput
-            label="팀장 (선택사항)"
-            value={leadName}
-            onChange={setLeadName}
-            placeholder="팀장의 이름을 입력하세요"
           />
 
           <div className="flex gap-2 justify-end pt-4 border-t">

@@ -8,20 +8,9 @@ interface Member {
   name: string;
   email: string;
   org?: string;
-  dept?: string;
+  dept?: string | string[];
 }
 
-interface Organization {
-  id: string;
-  name: string;
-}
-
-const DEMO_ORGS: Organization[] = [
-  { id: '1', name: '개발팀' },
-  { id: '2', name: '마케팅팀' },
-  { id: '3', name: '디자인팀' },
-  { id: '4', name: '데이터팀' },
-];
 
 export default function AdminMembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
@@ -33,8 +22,7 @@ export default function AdminMembersPage() {
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [dept, setDept] = useState('');
-  const [showDeptSuggestions, setShowDeptSuggestions] = useState(false);
+  const [depts, setDepts] = useState<string[]>([]);
 
   useEffect(() => {
     fetchMembers();
@@ -71,7 +59,7 @@ export default function AdminMembersPage() {
   }
 
   function handleCreateOrUpdate() {
-    if (!name.trim() || !email.trim() || !dept.trim()) {
+    if (!name.trim() || !email.trim() || depts.length === 0) {
       alert('필수 항목을 모두 입력해주세요');
       return;
     }
@@ -85,20 +73,52 @@ export default function AdminMembersPage() {
     if (editingMemberId) {
       updatedUserMembers = userMembers.map((m: Member) =>
         m.id === editingMemberId
-          ? { ...m, name, email, dept }
+          ? { ...m, name, email, dept: depts }
           : m
       );
       updatedMembers = members.map(m =>
         m.id === editingMemberId
-          ? { ...m, name, email, dept }
+          ? { ...m, name, email, dept: depts }
           : m
       );
+
+      // 조직도(userOrgs)도 함께 업데이트
+      const userOrgsStr = localStorage.getItem('userOrgs');
+      const userOrgs = userOrgsStr ? JSON.parse(userOrgsStr) : [];
+
+      // 1. 모든 조직에서 해당 구성원 제거
+      let updatedUserOrgs = userOrgs.map((org: any) => ({
+        ...org,
+        members: org.members.filter((m: Member) => m.id !== editingMemberId),
+      }));
+
+      // 2. 선택된 각 부서에 구성원 추가
+      updatedUserOrgs = updatedUserOrgs.map((org: any) => {
+        if (depts.includes(org.name)) {
+          // 이미 존재하는지 확인
+          const existingMember = org.members.find((m: Member) => m.id === editingMemberId);
+          if (!existingMember) {
+            return {
+              ...org,
+              members: [...org.members, {
+                id: editingMemberId,
+                name,
+                email,
+                org: org.name,
+              }],
+            };
+          }
+        }
+        return org;
+      });
+
+      localStorage.setItem('userOrgs', JSON.stringify(updatedUserOrgs));
     } else {
       const newMember: Member = {
         id: Date.now().toString(),
         name,
         email,
-        dept,
+        dept: depts,
       };
       updatedUserMembers = [...userMembers, newMember];
       updatedMembers = [...members, newMember];
@@ -112,17 +132,16 @@ export default function AdminMembersPage() {
   function resetForm() {
     setName('');
     setEmail('');
-    setDept('');
+    setDepts([]);
     setEditingMemberId(null);
     setShowModal(false);
-    setShowDeptSuggestions(false);
   }
 
   function handleEdit(member: Member) {
     setEditingMemberId(member.id);
     setName(member.name);
     setEmail(member.email);
-    setDept(member.dept || '');
+    setDepts(Array.isArray(member.dept) ? member.dept : (member.dept ? [member.dept] : []));
     setShowModal(true);
   }
 
@@ -131,11 +150,20 @@ export default function AdminMembersPage() {
       const updatedMembers = members.filter(m => m.id !== memberId);
       setMembers(updatedMembers);
 
-      // localStorage도 업데이트
+      // userMembers 업데이트
       const userMembersStr = localStorage.getItem('userMembers');
       const userMembers = userMembersStr ? JSON.parse(userMembersStr) : [];
       const updatedUserMembers = userMembers.filter((m: Member) => m.id !== memberId);
       localStorage.setItem('userMembers', JSON.stringify(updatedUserMembers));
+
+      // 조직도(userOrgs)에서도 구성원 제거
+      const userOrgsStr = localStorage.getItem('userOrgs');
+      const userOrgs = userOrgsStr ? JSON.parse(userOrgsStr) : [];
+      const updatedUserOrgs = userOrgs.map((org: any) => ({
+        ...org,
+        members: org.members.filter((m: Member) => m.id !== memberId),
+      }));
+      localStorage.setItem('userOrgs', JSON.stringify(updatedUserOrgs));
     }
   }
 
@@ -157,13 +185,14 @@ export default function AdminMembersPage() {
 
     for (const line of lines) {
       const parts = line.split('\t').map(p => p.trim());
-      if (parts.length === 3 && parts[0] && parts[1] && parts[2]) {
-        const [name, email, dept] = parts;
+      if (parts.length >= 3 && parts[0] && parts[1] && parts[2]) {
+        const [name, email, ...deptParts] = parts;
+        const depts = deptParts.filter(d => d.length > 0);
         const newMember: Member = {
           id: Date.now().toString() + Math.random(),
           name,
           email,
-          dept,
+          dept: depts,
         };
         newMembers.push(newMember);
         success++;
@@ -180,6 +209,28 @@ export default function AdminMembersPage() {
 
       const updatedMembers = [...members, ...newMembers];
       setMembers(updatedMembers);
+
+      // 조직도(userOrgs)에도 구성원 추가
+      const userOrgsStr = localStorage.getItem('userOrgs');
+      const userOrgs = userOrgsStr ? JSON.parse(userOrgsStr) : [];
+      const updatedUserOrgs = userOrgs.map((org: any) => {
+        // 해당 부서의 구성원들 추가
+        const membersToAdd = newMembers.filter(m => {
+          const memberDepts = Array.isArray(m.dept) ? m.dept : [m.dept];
+          return memberDepts.includes(org.name);
+        });
+        return {
+          ...org,
+          members: [...org.members, ...membersToAdd.map(m => ({
+            id: m.id,
+            name: m.name,
+            email: m.email,
+            org: org.name,
+          }))],
+        };
+      });
+      localStorage.setItem('userOrgs', JSON.stringify(updatedUserOrgs));
+
       setImportResult({ success, failed });
       setImportText('');
       setTimeout(() => {
@@ -189,12 +240,18 @@ export default function AdminMembersPage() {
     }
   }
 
-  // 부서 자동완성 필터링
-  const filteredDepts = dept.trim()
-    ? DEMO_ORGS.filter(o =>
-        o.name.toLowerCase().includes(dept.toLowerCase())
-      )
-    : [];
+  // 실제로 존재하는 부서 목록 (userMembers와 userOrgs 모두에서 추출)
+  const userOrgsStr = localStorage.getItem('userOrgs');
+  const userOrgs = userOrgsStr ? JSON.parse(userOrgsStr) : [];
+
+  const deptFromMembers = members.flatMap(m => {
+    const memberDepts = Array.isArray(m.dept) ? m.dept : (m.dept ? [m.dept] : []);
+    return memberDepts;
+  });
+
+  const deptFromOrgs = userOrgs.map((org: any) => org.name);
+
+  const actualDepts = Array.from(new Set([...deptFromOrgs, ...deptFromMembers])).sort();
 
   if (loading) {
     return <div className="text-center py-12">로드 중...</div>;
@@ -232,7 +289,9 @@ export default function AdminMembersPage() {
                 <tr key={member.id} className="hover:bg-gray-50 transition">
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">{member.name}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{member.email}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{member.dept || '-'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">
+                    {Array.isArray(member.dept) ? member.dept.join(', ') : member.dept || '-'}
+                  </td>
                   <td className="px-6 py-4 text-sm space-x-2">
                     <button
                       onClick={() => handleEdit(member)}
@@ -268,9 +327,11 @@ export default function AdminMembersPage() {
       >
         <div className="space-y-4">
           <div className="bg-blue-50 rounded-lg p-3 text-sm text-blue-700">
-            <p className="font-medium mb-1">형식: 이름 [탭] 이메일 [탭] 부서</p>
-            <p className="text-xs">예시:</p>
+            <p className="font-medium mb-1">형식: 이름 [탭] 이메일 [탭] 부서1 [탭] 부서2 (선택)</p>
+            <p className="text-xs">예시 (단일 부서):</p>
             <code className="text-xs bg-white px-2 py-1 rounded block mt-1">Beth Ahn	yja@wincubemkt.com	해외플랫폼사업실</code>
+            <p className="text-xs mt-2">예시 (다중 부서):</p>
+            <code className="text-xs bg-white px-2 py-1 rounded block mt-1">John Doe	john@wincubemkt.com	개발팀	마케팅팀</code>
           </div>
 
           <textarea
@@ -335,37 +396,47 @@ export default function AdminMembersPage() {
             required
           />
 
-          {/* 부서 필드 (Autocomplete) */}
-          <div className="relative">
+          {/* 부서 필드 (다중 선택) */}
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               부서 <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              value={dept}
-              onChange={(e) => {
-                setDept(e.target.value);
-                setShowDeptSuggestions(e.target.value.trim().length > 0);
-              }}
-              onFocus={() => dept.trim().length > 0 && setShowDeptSuggestions(true)}
-              placeholder="부서명을 입력하세요 (예: 개발팀)"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-indigo-500"
-            />
-
-            {/* 부서 자동완성 드롭다운 */}
-            {showDeptSuggestions && filteredDepts.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10">
-                {filteredDepts.map(organization => (
-                  <button
-                    key={organization.id}
-                    onClick={() => {
-                      setDept(organization.name);
-                      setShowDeptSuggestions(false);
-                    }}
-                    className="w-full text-left px-3 py-2 hover:bg-indigo-50 border-b border-gray-100 last:border-b-0 text-sm text-gray-900 font-medium"
-                  >
-                    {organization.name}
-                  </button>
+            <div className="space-y-2 border border-gray-300 rounded-lg p-3 bg-gray-50">
+              {actualDepts.length > 0 ? (
+                actualDepts.map(dept => (
+                  <label key={dept} className="flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={depts.includes(dept)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setDepts([...depts, dept]);
+                        } else {
+                          setDepts(depts.filter(d => d !== dept));
+                        }
+                      }}
+                      className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">{dept}</span>
+                  </label>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500">import된 부서가 없습니다</p>
+              )}
+            </div>
+            {depts.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {depts.map(dept => (
+                  <span key={dept} className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
+                    {dept}
+                    <button
+                      type="button"
+                      onClick={() => setDepts(depts.filter(d => d !== dept))}
+                      className="text-indigo-600 hover:text-indigo-800"
+                    >
+                      ×
+                    </button>
+                  </span>
                 ))}
               </div>
             )}

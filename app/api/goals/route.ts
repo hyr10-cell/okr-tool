@@ -1,63 +1,112 @@
 import { NextResponse, NextRequest } from 'next/server';
+import { sendNotification } from '@/app/lib/notifications';
 
-const DEMO_GOALS = [
-  {
-    id: '1',
-    title: '서비스 성능 개선',
-    status: 'ON_TRACK',
-    level: 'COMPANY',
-    owner: { id: '1', name: '황유리', email: 'hyr@example.com' },
-    cycle: { id: '1', name: '2024년 Q2' },
-    description: '웹 응답 속도 50% 개선',
-    weight: 30,
-    createdAt: new Date(),
-    checkIns: [{ progress: 65 }],
-    sharedWith: ['고종희'],
-  },
-  {
-    id: '2',
-    title: 'API 보안 강화',
-    status: 'OFF_TRACK',
-    level: 'TEAM',
-    owner: { id: '2', name: '고종희', email: 'kjh@example.com' },
-    cycle: { id: '1', name: '2024년 Q2' },
-    description: 'OWASP Top 10 취약점 제거',
-    weight: 25,
-    createdAt: new Date(),
-    checkIns: [{ progress: 30 }],
-    sharedWith: ['황유리'],
-  },
-  {
-    id: '3',
-    title: '코드 리뷰 프로세스 개선',
-    status: 'PENDING',
-    level: 'TEAM',
-    owner: { id: '1', name: '황유리', email: 'hyr@example.com' },
-    cycle: { id: '1', name: '2024년 Q2' },
-    description: '자동 검수 도구 도입',
-    weight: 20,
-    createdAt: new Date(),
-    checkIns: [],
-    sharedWith: [],
-  },
-];
-
-export async function GET(request: NextRequest) {
-  const user = request.nextUrl.searchParams.get('user');
-
-  let goals = DEMO_GOALS;
-  if (user) {
-    goals = DEMO_GOALS.filter(goal =>
-      goal.owner.name === user || (goal.sharedWith && goal.sharedWith.includes(user))
-    );
-  }
-
-  return NextResponse.json({ success: true, data: goals });
+export async function GET() {
+  return NextResponse.json({ success: true, data: [] });
 }
 
-export async function POST() {
-  return NextResponse.json(
-    { success: true, message: 'Demo mode - data not persisted' },
-    { status: 201 }
-  );
+export async function POST(request: NextRequest) {
+  try {
+    const goal = await request.json();
+
+    // 담당자와 리뷰어의 이메일 수집
+    const recipients: string[] = [];
+
+    // 담당자(owner)의 이메일
+    if (goal.owner?.email) {
+      recipients.push(goal.owner.email);
+    }
+
+    // 리뷰어(sharedWith)의 이메일 - 구성원 정보에서 조회
+    if (goal.sharedWith && goal.sharedWith.length > 0) {
+      const userMembersStr = typeof window !== 'undefined' ? localStorage.getItem('userMembers') : null;
+      let members: any[] = [];
+
+      try {
+        members = userMembersStr ? JSON.parse(userMembersStr) : [];
+      } catch (e) {
+        console.error('Failed to parse members:', e);
+      }
+
+      for (const reviewer of goal.sharedWith) {
+        const member = members.find(m => m.name === reviewer);
+        if (member?.email) {
+          recipients.push(member.email);
+        }
+      }
+    }
+
+    // 알림 발송
+    if (recipients.length > 0) {
+      await sendNotification({
+        type: 'goal_created',
+        actor: { name: goal.owner?.name || '나', email: goal.owner?.email || '' },
+        recipients: [...new Set(recipients)], // 중복 제거
+        target: { title: goal.title, id: goal.id, type: 'goal' },
+      });
+    }
+
+    return NextResponse.json(
+      { success: true, message: 'Goal created', data: goal },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error('Goal creation error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to create goal' },
+      { status: 400 }
+    );
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const goal = await request.json();
+
+    // 담당자와 리뷰어의 이메일 수집
+    const recipients: string[] = [];
+
+    if (goal.owner?.email) {
+      recipients.push(goal.owner.email);
+    }
+
+    if (goal.sharedWith && goal.sharedWith.length > 0) {
+      const userMembersStr = typeof window !== 'undefined' ? localStorage.getItem('userMembers') : null;
+      let members: any[] = [];
+
+      try {
+        members = userMembersStr ? JSON.parse(userMembersStr) : [];
+      } catch (e) {
+        console.error('Failed to parse members:', e);
+      }
+
+      for (const reviewer of goal.sharedWith) {
+        const member = members.find(m => m.name === reviewer);
+        if (member?.email) {
+          recipients.push(member.email);
+        }
+      }
+    }
+
+    // 알림 발송
+    if (recipients.length > 0) {
+      await sendNotification({
+        type: 'goal_updated',
+        actor: { name: goal.owner?.name || '나', email: goal.owner?.email || '' },
+        recipients: [...new Set(recipients)],
+        target: { title: goal.title, id: goal.id, type: 'goal' },
+      });
+    }
+
+    return NextResponse.json(
+      { success: true, message: 'Goal updated', data: goal },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Goal update error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to update goal' },
+      { status: 400 }
+    );
+  }
 }

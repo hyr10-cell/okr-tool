@@ -20,6 +20,7 @@ interface Goal {
   status: string;
   level: string;
   owner: { name: string };
+  sharedWith?: string[];
   cycle?: { name: string };
   checkIns: CheckIn[];
 }
@@ -154,9 +155,12 @@ export default function GoalDetailPage({ params }: { params: Promise<{ id: strin
         </div>
         {goal.description && <p className="text-gray-600 text-sm mb-4">{goal.description}</p>}
 
-        <div className="flex gap-4 text-xs text-gray-500 mb-4">
+        <div className="text-xs text-gray-600 mb-4">
           <span>담당: {goal.owner.name}</span>
-          {goal.cycle && <span>사이클: {goal.cycle.name}</span>}
+          {goal.sharedWith && goal.sharedWith.length > 0 && (
+            <span className="ml-2">/ 리뷰어: {goal.sharedWith.join(', ')}</span>
+          )}
+          {goal.cycle && <span className="ml-4">사이클: {goal.cycle.name}</span>}
         </div>
 
         <div>
@@ -189,7 +193,7 @@ export default function GoalDetailPage({ params }: { params: Promise<{ id: strin
               </div>
               {ci.note && <p className="text-sm text-gray-600 mt-1">{ci.note}</p>}
 
-              {ci.comments.length > 0 && (
+              {(ci.comments || []).length > 0 && (
                 <div className="mt-3 space-y-2">
                   {ci.comments.map((c) => (
                     <div key={c.id} className="bg-indigo-50 rounded p-2 text-sm">

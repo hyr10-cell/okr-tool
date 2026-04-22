@@ -15,10 +15,6 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<User>({ name: '', email: '', role: '', org: '' });
-  const [notifications, setNotifications] = useState({
-    email: true,
-    slack: true,
-  });
 
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
@@ -56,13 +52,6 @@ export default function ProfilePage() {
   const handleCancel = () => {
     setFormData(user || { name: '', email: '', role: '', org: '' });
     setIsEditing(false);
-  };
-
-  const handleNotificationChange = (key: keyof typeof notifications) => {
-    setNotifications(prev => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
   };
 
   if (!user) return <div className="text-center py-12">로드 중...</div>;
@@ -170,47 +159,6 @@ export default function ProfilePage() {
               </div>
             </>
           )}
-        </div>
-      </Card>
-
-      {/* Notification Settings Card */}
-      <Card className="max-w-2xl">
-        <div className="space-y-4">
-          <h3 className="font-semibold text-gray-900">알림 설정</h3>
-
-          <div className="space-y-3 pt-2">
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={notifications.email}
-                onChange={() => handleNotificationChange('email')}
-                className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-              />
-              <span className="ml-3 text-sm text-gray-700">
-                <span className="font-medium">이메일 알림</span>
-                <span className="text-gray-600 ml-2">목표 업데이트, 체크인 마감, 피드백 수신 시 이메일 알림</span>
-              </span>
-            </label>
-
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={notifications.slack}
-                onChange={() => handleNotificationChange('slack')}
-                className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-              />
-              <span className="ml-3 text-sm text-gray-700">
-                <span className="font-medium">Slack 알림</span>
-                <span className="text-gray-600 ml-2">Slack 워크스페이스로 실시간 알림 수신</span>
-              </span>
-            </label>
-          </div>
-
-          <div className="pt-4 border-t">
-            <Button variant="secondary" className="w-full">
-              알림 설정 저장
-            </Button>
-          </div>
         </div>
       </Card>
     </div>

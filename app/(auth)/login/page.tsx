@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 const DEMO_ACCOUNTS = [
-  { email: 'admin@example.com', name: '관리자', role: 'ADMIN' },
+  { email: 'admin@wincubemkt.com', name: '관리자', role: 'ADMIN' },
 ];
 
 export default function LoginPage() {

@@ -21,9 +21,9 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
         // Demo accounts for testing without database
         const demoAccounts: Record<string, any> = {
-          'admin@example.com': {
+          'admin@wincubemkt.com': {
             id: '1',
-            email: 'admin@example.com',
+            email: 'admin@wincubemkt.com',
             name: '관리자',
             role: 'ADMIN',
           },

@@ -43,6 +43,14 @@ export default function GoalsPage() {
       const parsedUser = JSON.parse(savedUser);
       setUser(parsedUser);
       setOwner(parsedUser.name);
+
+      // 사용자별로 데모 데이터 한 번만 삭제
+      const cleanedKey = `_demoCleaned_${parsedUser.name}`;
+      if (!localStorage.getItem(cleanedKey)) {
+        localStorage.removeItem('userGoals');
+        localStorage.removeItem('userFeedbacks');
+        localStorage.setItem(cleanedKey, 'true');
+      }
     }
     fetchGoals();
   }, []);
@@ -128,6 +136,20 @@ export default function GoalsPage() {
 
     setGoals(updatedGoals);
     localStorage.setItem('userGoals', JSON.stringify(updatedGoals));
+
+    // 활동 기록 저장
+    const activitiesStr = localStorage.getItem('userActivities');
+    const activities = activitiesStr ? JSON.parse(activitiesStr) : [];
+    activities.unshift({
+      id: Date.now().toString(),
+      type: editingGoalId ? 'goal_status' : 'goal_status',
+      title: title,
+      description: editingGoalId ? `목표 수정: ${title}` : `새 목표 생성: ${title}`,
+      timestamp: new Date().toISOString(),
+      goalId: editingGoalId || goalData.id,
+    });
+    localStorage.setItem('userActivities', JSON.stringify(activities.slice(0, 20)));
+
     setTitle('');
     setDescription('');
     setStartDate('');
@@ -143,7 +165,11 @@ export default function GoalsPage() {
   const userMembers = userMembersStr ? JSON.parse(userMembersStr) : [];
 
   const departmentMembers = user?.org
-    ? userMembers.filter((m: any) => m.dept === user.org)
+    ? userMembers.filter((m: any) => {
+        const userDepts = Array.isArray(user.org) ? user.org : (user.org ? [user.org] : []);
+        const memberDepts = Array.isArray(m.dept) ? m.dept : (m.dept ? [m.dept] : []);
+        return userDepts.some((ud: string) => memberDepts.includes(ud));
+      })
     : userMembers;
 
   const filteredMembers = owner.trim()
@@ -167,17 +193,33 @@ export default function GoalsPage() {
   const handleDeleteGoal = (goalId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (confirm('이 목표를 삭제하시겠습니까?')) {
+      const deletedGoal = goals.find(g => g.id === goalId);
       const updatedGoals = goals.filter(g => g.id !== goalId);
       setGoals(updatedGoals);
       localStorage.setItem('userGoals', JSON.stringify(updatedGoals));
+
+      // 활동 기록 저장
+      const activitiesStr = localStorage.getItem('userActivities');
+      const activities = activitiesStr ? JSON.parse(activitiesStr) : [];
+      activities.unshift({
+        id: Date.now().toString(),
+        type: 'goal_status',
+        title: deletedGoal?.title || '목표',
+        description: `목표 삭제: ${deletedGoal?.title}`,
+        timestamp: new Date().toISOString(),
+        goalId: goalId,
+      });
+      localStorage.setItem('userActivities', JSON.stringify(activities.slice(0, 20)));
     }
   };
 
   const filteredGoals = goals.filter((goal) => {
-    // 담당자이거나 리뷰어인 목표만 표시
-    const isOwner = goal.owner?.name === user?.name;
-    const isReviewer = goal.sharedWith?.includes(user?.name);
-    if (!isOwner && !isReviewer) return false;
+    // 관리자는 모든 목표 조회 가능, 일반 사용자는 담당자이거나 리뷰어인 목표만 표시
+    if (user?.role !== 'ADMIN') {
+      const isOwner = goal.owner?.name === user?.name;
+      const isReviewer = goal.sharedWith?.includes(user?.name);
+      if (!isOwner && !isReviewer) return false;
+    }
 
     if (statusFilter && goal.status !== statusFilter) return false;
     if (levelFilter && goal.level !== levelFilter) return false;
@@ -269,10 +311,17 @@ export default function GoalsPage() {
                     <p className="text-sm text-gray-600 mt-1">{goal.description}</p>
                   )}
 
-                  <div className="flex items-center gap-3 mb-3">
-                    <StatusBadge status={goal.status} />
-                    <span className="text-xs text-gray-500">담당: {goal.owner.name}</span>
-                    <span className="text-xs text-gray-500 ml-auto">{goal.progress || 0}%</span>
+                  <div className="flex flex-col gap-2 mb-3">
+                    <div className="flex items-center gap-3">
+                      <StatusBadge status={goal.status} />
+                      <span className="text-xs text-gray-500 ml-auto">{goal.progress || 0}%</span>
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      <span>담당: {goal.owner.name}</span>
+                      {goal.sharedWith && goal.sharedWith.length > 0 && (
+                        <span className="ml-2">/ 리뷰어: {goal.sharedWith.join(', ')}</span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="flex gap-2 ml-4 flex-shrink-0">
@@ -374,7 +423,7 @@ export default function GoalsPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">리뷰어 (선택)</label>
-            <div className="space-y-2">
+            <div className="space-y-2 border border-gray-300 rounded-lg p-3 bg-gray-50 max-h-48 overflow-y-auto">
               {departmentMembers.map(member => (
                 <label key={member.id} className="flex items-center cursor-pointer">
                   <input

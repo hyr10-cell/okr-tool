@@ -15,7 +15,7 @@ async function main() {
   // 사용자 생성 (Credentials 제공자용 - 실제로는 bcrypt로 해시된 비밀번호 필요)
   const user1 = await prisma.user.create({
     data: {
-      email: 'admin@example.com',
+      email: 'admin@wincubemkt.com',
       name: '관리자',
       role: 'ADMIN',
       departments: {

@@ -101,6 +101,19 @@ export default function CheckInPage({ params }: { params: Promise<{ id: string }
           attachmentNames: attachments.map(f => f.name),
         }),
       });
+
+      // 활동 기록 저장
+      const activitiesStr = localStorage.getItem('userActivities');
+      const activities = activitiesStr ? JSON.parse(activitiesStr) : [];
+      activities.unshift({
+        id: Date.now().toString(),
+        type: 'checkin',
+        title: goal?.title || '목표',
+        description: `체크인: ${progress}% (${status === 'ON_TRACK' ? '순항' : status === 'OFF_TRACK' ? '난항' : '완료'})`,
+        timestamp: new Date().toISOString(),
+        goalId: resolvedParams.id,
+      });
+      localStorage.setItem('userActivities', JSON.stringify(activities.slice(0, 20)));
     } catch (error) {
       console.error('체크인 저장 실패:', error);
     } finally {

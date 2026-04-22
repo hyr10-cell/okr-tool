@@ -66,10 +66,12 @@ export default function DashboardPage() {
         new Map(allGoals.map(goal => [goal.id, goal])).values()
       );
 
-      // 담당자이거나 리뷰어인 목표만 필터링
-      const myGoals = uniqueGoals.filter((g: Goal) =>
-        g.owner?.name === currentUser?.name || g.sharedWith?.includes(currentUser?.name)
-      );
+      // 관리자는 모든 목표 조회 가능, 일반 사용자는 담당자이거나 리뷰어인 목표만 표시
+      const myGoals = currentUser?.role === 'ADMIN'
+        ? uniqueGoals
+        : uniqueGoals.filter((g: Goal) =>
+            g.owner?.name === currentUser?.name || g.sharedWith?.includes(currentUser?.name)
+          );
 
       const newStats = {
         total: myGoals.length,
@@ -105,7 +107,22 @@ export default function DashboardPage() {
 
       // 활동 병합 (최근것부터)
       const allActivities = [...userActivities, ...apiActivities];
-      setActivities(allActivities.slice(0, 10)); // 최근 10개만 표시
+
+      // 관리자는 모든 활동 조회 가능, 일반 사용자는 자신과 관련된 활동만 표시
+      let filteredActivities = allActivities;
+      if (currentUser?.role !== 'ADMIN') {
+        filteredActivities = allActivities.filter((activity: Activity) => {
+          // 자신의 목표와 관련된 활동만 표시
+          if (activity.goalId) {
+            const goal = myGoals.find(g => g.id === activity.goalId);
+            if (goal) return true;
+          }
+          // 자신의 피드백과 관련된 활동도 표시할 수 있음
+          return false;
+        });
+      }
+
+      setActivities(filteredActivities.slice(0, 10)); // 최근 10개만 표시
     } catch (err) {
       setActivities([]);
     } finally {

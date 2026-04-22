@@ -20,15 +20,6 @@ interface Member {
   role?: string;
 }
 
-const DEMO_MEMBERS: Member[] = [
-  { id: '1', name: '김개발', role: '개발팀장' },
-  { id: '2', name: '이백엔드', role: '개발자' },
-  { id: '3', name: '박프론트', role: '개발자' },
-  { id: '4', name: '정데이터', role: '데이터 엔지니어' },
-  { id: '5', name: '최디자인', role: '디자이너' },
-  { id: '6', name: '홍마케팅', role: '마케팅매니저' },
-];
-
 export default function FeedbackPage() {
   const [user, setUser] = useState<any>(null);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
@@ -40,6 +31,7 @@ export default function FeedbackPage() {
   const [feedbackType, setFeedbackType] = useState<'KEEP_GOING' | 'IMPROVE'>('KEEP_GOING');
   const [content, setContent] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [editingFeedbackId, setEditingFeedbackId] = useState<string | null>(null);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
@@ -85,12 +77,12 @@ export default function FeedbackPage() {
       return;
     }
 
-    const newFeedback: Feedback = {
-      id: Date.now().toString(),
+    const feedbackData: Feedback = {
+      id: editingFeedbackId || Date.now().toString(),
       from: user?.name || '나',
       type: feedbackType,
       content,
-      createdAt: new Date().toISOString().split('T')[0],
+      createdAt: editingFeedbackId ? feedbacks.find(f => f.id === editingFeedbackId)?.createdAt || new Date().toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       direction: 'sent',
       recipient: recipientName,
     };
@@ -99,20 +91,51 @@ export default function FeedbackPage() {
       // localStorage에 피드백 저장
       const userFeedbacksStr = localStorage.getItem('userFeedbacks');
       const userFeedbacks = userFeedbacksStr ? JSON.parse(userFeedbacksStr) : [];
-      userFeedbacks.unshift(newFeedback);
+
+      if (editingFeedbackId) {
+        // 수정 모드
+        const feedbackIndex = userFeedbacks.findIndex((f: Feedback) => f.id === editingFeedbackId);
+        if (feedbackIndex !== -1) {
+          userFeedbacks[feedbackIndex] = feedbackData;
+        }
+      } else {
+        // 생성 모드
+        userFeedbacks.unshift(feedbackData);
+      }
+
       localStorage.setItem('userFeedbacks', JSON.stringify(userFeedbacks));
+
+      // 활동 기록 저장
+      const activitiesStr = localStorage.getItem('userActivities');
+      const activities = activitiesStr ? JSON.parse(activitiesStr) : [];
+      activities.unshift({
+        id: Date.now().toString(),
+        type: 'feedback',
+        title: recipientName,
+        description: editingFeedbackId
+          ? `피드백 수정: ${feedbackType === 'KEEP_GOING' ? '좋은 점' : '개선점'} - ${content.substring(0, 50)}${content.length > 50 ? '...' : ''}`
+          : `피드백: ${feedbackType === 'KEEP_GOING' ? '좋은 점' : '개선점'} - ${content.substring(0, 50)}${content.length > 50 ? '...' : ''}`,
+        timestamp: new Date().toISOString(),
+        feedbackId: feedbackData.id,
+      });
+      localStorage.setItem('userActivities', JSON.stringify(activities.slice(0, 20)));
 
       // API에도 요청
       fetch('/api/feedback', {
-        method: 'POST',
+        method: editingFeedbackId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newFeedback),
+        body: JSON.stringify(feedbackData),
       }).catch(err => console.error('피드백 저장 실패:', err));
     } catch (err) {
       console.error('localStorage 저장 실패:', err);
     }
 
-    setFeedbacks([newFeedback, ...feedbacks]);
+    if (editingFeedbackId) {
+      setFeedbacks(feedbacks.map(f => f.id === editingFeedbackId ? feedbackData : f));
+    } else {
+      setFeedbacks([feedbackData, ...feedbacks]);
+    }
+
     resetForm();
   }
 
@@ -122,20 +145,59 @@ export default function FeedbackPage() {
     setContent('');
     setShowModal(false);
     setShowSuggestions(false);
+    setEditingFeedbackId(null);
   }
+
+  // 모든 구성원 가져오기
+  const userMembersStr = localStorage.getItem('userMembers');
+  const allMembers = userMembersStr ? JSON.parse(userMembersStr) : [];
 
   // 자동완성 필터링
   const filteredMembers = recipientName.trim()
-    ? DEMO_MEMBERS.filter(m =>
+    ? allMembers.filter((m: any) =>
         m.name.toLowerCase().includes(recipientName.toLowerCase())
       )
     : [];
 
+  const handleEditFeedback = (feedback: Feedback, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingFeedbackId(feedback.id);
+    setRecipientName(feedback.recipient || '');
+    setFeedbackType(feedback.type);
+    setContent(feedback.content);
+    setShowModal(true);
+  };
+
+  const handleDeleteFeedback = (feedbackId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm('이 피드백을 삭제하시겠습니까?')) {
+      const deletedFeedback = feedbacks.find(f => f.id === feedbackId);
+      const updatedFeedbacks = feedbacks.filter(f => f.id !== feedbackId);
+      setFeedbacks(updatedFeedbacks);
+      localStorage.setItem('userFeedbacks', JSON.stringify(updatedFeedbacks));
+
+      // 활동 기록 저장
+      const activitiesStr = localStorage.getItem('userActivities');
+      const activities = activitiesStr ? JSON.parse(activitiesStr) : [];
+      activities.unshift({
+        id: Date.now().toString(),
+        type: 'feedback',
+        title: deletedFeedback?.recipient || '피드백',
+        description: `피드백 삭제: ${deletedFeedback?.type === 'KEEP_GOING' ? '좋은 점' : '개선점'}`,
+        timestamp: new Date().toISOString(),
+        feedbackId: feedbackId,
+      });
+      localStorage.setItem('userActivities', JSON.stringify(activities.slice(0, 20)));
+    }
+  };
+
   const filteredFeedbacks = feedbacks.filter(fb => {
-    // 내가 보낸 피드백(from === user.name)이거나 받은 피드백(recipient === user.name)만 표시
-    const isSent = fb.from === user?.name;
-    const isReceived = fb.recipient === user?.name;
-    if (!isSent && !isReceived) return false;
+    // 관리자는 모든 피드백 조회 가능, 일반 사용자는 보낸/받은 피드백만 표시
+    if (user?.role !== 'ADMIN') {
+      const isSent = fb.from === user?.name;
+      const isReceived = fb.recipient === user?.name;
+      if (!isSent && !isReceived) return false;
+    }
 
     if (filterDirection !== 'all' && fb.direction !== filterDirection) return false;
     if (filterType !== 'all' && fb.type !== filterType) return false;
@@ -209,6 +271,22 @@ export default function FeedbackPage() {
                   </div>
                   <p className="mt-3 text-gray-900 leading-relaxed">{fb.content}</p>
                 </div>
+                {fb.from === user?.name && (
+                  <div className="flex gap-2 ml-4 flex-shrink-0">
+                    <button
+                      onClick={(e) => handleEditFeedback(fb, e)}
+                      className="text-indigo-600 hover:text-indigo-800 text-sm"
+                    >
+                      수정
+                    </button>
+                    <button
+                      onClick={(e) => handleDeleteFeedback(fb.id, e)}
+                      className="text-red-600 hover:text-red-800 text-sm"
+                    >
+                      삭제
+                    </button>
+                  </div>
+                )}
               </div>
             </Card>
           ))}
@@ -218,8 +296,11 @@ export default function FeedbackPage() {
       {/* Write Feedback Modal */}
       <Modal
         isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        title="피드백 작성"
+        onClose={() => {
+          setShowModal(false);
+          setEditingFeedbackId(null);
+        }}
+        title={editingFeedbackId ? "피드백 수정" : "피드백 작성"}
         showFooter={false}
         size="lg"
       >
@@ -286,11 +367,14 @@ export default function FeedbackPage() {
           />
 
           <div className="flex gap-2 justify-end pt-4 border-t">
-            <Button onClick={() => setShowModal(false)} variant="secondary">
+            <Button onClick={() => {
+              setShowModal(false);
+              setEditingFeedbackId(null);
+            }} variant="secondary">
               취소
             </Button>
             <Button onClick={handleSubmit}>
-              작성하기
+              {editingFeedbackId ? '수정하기' : '작성하기'}
             </Button>
           </div>
         </div>

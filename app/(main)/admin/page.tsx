@@ -12,6 +12,7 @@ export default function AdminPage() {
   const router = useRouter();
   const [autoGenerating, setAutoGenerating] = useState(false);
   const [message, setMessage] = useState('');
+  const [clearing, setClearing] = useState(false);
 
   async function handleAutoGenerateOrgs() {
     setAutoGenerating(true);
@@ -28,14 +29,16 @@ export default function AdminPage() {
         return;
       }
 
-      // 부서별로 그룹화
+      // 부서별로 그룹화 (다중 부서 지원)
       const deptMap: { [key: string]: any[] } = {};
       userMembers.forEach((member: any) => {
-        const dept = member.dept || '기타';
-        if (!deptMap[dept]) {
-          deptMap[dept] = [];
-        }
-        deptMap[dept].push(member);
+        const memberDepts = Array.isArray(member.dept) ? member.dept : (member.dept ? [member.dept] : ['기타']);
+        memberDepts.forEach((dept: string) => {
+          if (!deptMap[dept]) {
+            deptMap[dept] = [];
+          }
+          deptMap[dept].push(member);
+        });
       });
 
       // Organization 객체 생성
@@ -72,6 +75,30 @@ export default function AdminPage() {
     }
   }
 
+  function handleClearTestData() {
+    if (confirm('테스트 데이터를 삭제하시겠습니까?\n(목표, 피드백, 활동이 삭제됩니다)')) {
+      setClearing(true);
+      setMessage('데이터 삭제 중...');
+
+      try {
+        localStorage.removeItem('userGoals');
+        localStorage.removeItem('userFeedbacks');
+        localStorage.removeItem('userActivities');
+
+        setMessage('✅ 테스트 데이터가 삭제되었습니다');
+
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 1500);
+      } catch (err) {
+        console.error('데이터 삭제 실패:', err);
+        setMessage('❌ 삭제 실패');
+      } finally {
+        setClearing(false);
+      }
+    }
+  }
+
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">관리자 설정</h1>
@@ -100,6 +127,22 @@ export default function AdminPage() {
             className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
           >
             {autoGenerating ? '생성 중...' : '🚀 생성'}
+          </button>
+        </div>
+      </div>
+
+      <div className="mb-6 bg-white rounded-lg border border-red-200 p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-semibold text-gray-900">테스트 데이터 삭제</h2>
+            <p className="text-sm text-gray-600 mt-1">목표, 피드백, 활동 등 테스트 데이터를 삭제합니다 (조직도는 유지)</p>
+          </div>
+          <button
+            onClick={handleClearTestData}
+            disabled={clearing}
+            className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+          >
+            {clearing ? '삭제 중...' : '🗑️ 삭제'}
           </button>
         </div>
       </div>
