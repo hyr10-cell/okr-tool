@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 const MENU = [
@@ -9,9 +10,97 @@ const MENU = [
 
 export default function AdminPage() {
   const router = useRouter();
+  const [autoGenerating, setAutoGenerating] = useState(false);
+  const [message, setMessage] = useState('');
+
+  async function handleAutoGenerateOrgs() {
+    setAutoGenerating(true);
+    setMessage('생성 중...');
+
+    try {
+      // userMembers 로드
+      const userMembersStr = localStorage.getItem('userMembers');
+      const userMembers = userMembersStr ? JSON.parse(userMembersStr) : [];
+
+      if (userMembers.length === 0) {
+        setMessage('❌ 구성원이 없습니다');
+        setAutoGenerating(false);
+        return;
+      }
+
+      // 부서별로 그룹화
+      const deptMap: { [key: string]: any[] } = {};
+      userMembers.forEach((member: any) => {
+        const dept = member.dept || '기타';
+        if (!deptMap[dept]) {
+          deptMap[dept] = [];
+        }
+        deptMap[dept].push(member);
+      });
+
+      // Organization 객체 생성
+      const orgs = Object.entries(deptMap).map(([deptName, members], idx) => ({
+        id: `org_${idx}`,
+        name: deptName,
+        lead: members[0]?.name || undefined,
+        members: members.map((m: any) => ({
+          id: m.id,
+          name: m.name,
+          email: m.email,
+          org: deptName,
+        })),
+        children: [],
+      }));
+
+      // localStorage에 저장
+      localStorage.setItem('userOrgs', JSON.stringify(orgs));
+
+      const deptCount = Object.keys(deptMap).length;
+      setMessage(`✅ ${deptCount}개 부서, ${userMembers.length}명의 구성원이 조직도에 추가됨`);
+
+      setTimeout(() => {
+        router.push('/org');
+      }, 1500);
+    } catch (err) {
+      console.error('자동 생성 실패:', err);
+      setMessage('❌ 생성 실패');
+    } finally {
+      setAutoGenerating(false);
+    }
+  }
+
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">관리자 설정</h1>
+
+      {message && (
+        <div className={`mb-6 rounded-lg p-4 text-sm ${
+          message.includes('✅')
+            ? 'bg-green-50 text-green-700'
+            : message.includes('❌')
+            ? 'bg-red-50 text-red-700'
+            : 'bg-blue-50 text-blue-700'
+        }`}>
+          {message}
+        </div>
+      )}
+
+      <div className="mb-6 bg-white rounded-lg border border-gray-200 p-5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-semibold text-gray-900">조직도 자동 생성</h2>
+            <p className="text-sm text-gray-600 mt-1">import한 구성원을 부서별로 자동으로 조직도 생성</p>
+          </div>
+          <button
+            onClick={handleAutoGenerateOrgs}
+            disabled={autoGenerating}
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+          >
+            {autoGenerating ? '생성 중...' : '🚀 생성'}
+          </button>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {MENU.map((m) => (
           <button
