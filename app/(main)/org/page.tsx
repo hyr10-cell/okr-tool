@@ -6,7 +6,7 @@ import { Card, Button, Modal, FormInput } from '@/app/components/ui';
 interface Member {
   id: string;
   name: string;
-  role: string;
+  email?: string;
   org?: string;
   dept?: string;
 }
@@ -32,7 +32,7 @@ export default function OrgPage() {
   const [orgName, setOrgName] = useState('');
   const [leadName, setLeadName] = useState('');
   const [memberName, setMemberName] = useState('');
-  const [memberRole, setMemberRole] = useState('');
+  const [memberEmail, setMemberEmail] = useState('');
 
   const isAdmin = user?.role === 'ADMIN';
 
@@ -60,8 +60,8 @@ export default function OrgPage() {
           name: '개발팀',
           lead: '황유리',
           members: [
-            { id: 'm1', name: '황유리', role: 'Developer', org: '개발팀', dept: '개발팀' },
-            { id: 'm2', name: '고종희', role: 'Developer', org: '개발팀', dept: '개발팀' },
+            { id: 'm1', name: '황유리', email: 'hyr@example.com', org: '개발팀', dept: '개발팀' },
+            { id: 'm2', name: '고종희', email: 'gkh@example.com', org: '개발팀', dept: '개발팀' },
           ],
           children: [
             {
@@ -70,7 +70,7 @@ export default function OrgPage() {
               lead: '고종희',
               parentId: '1',
               members: [
-                { id: 'm3', name: '개발자A', role: 'Backend Developer', org: '백엔드팀', dept: '개발팀' },
+                { id: 'm3', name: '개발자A', email: 'devA@example.com', org: '백엔드팀', dept: '개발팀' },
               ],
             },
             {
@@ -79,7 +79,7 @@ export default function OrgPage() {
               lead: '황유리',
               parentId: '1',
               members: [
-                { id: 'm4', name: '개발자B', role: 'Frontend Developer', org: '프론트엔드팀', dept: '개발팀' },
+                { id: 'm4', name: '개발자B', email: 'devB@example.com', org: '프론트엔드팀', dept: '개발팀' },
               ],
             },
           ],
@@ -134,7 +134,7 @@ export default function OrgPage() {
   }
 
   function handleAddMember() {
-    if (!memberName.trim() || !memberRole.trim() || !selectedOrgId) {
+    if (!memberName.trim() || !memberEmail.trim() || !selectedOrgId) {
       alert('필수 항목을 입력해주세요');
       return;
     }
@@ -148,7 +148,7 @@ export default function OrgPage() {
             {
               id: Date.now().toString(),
               name: memberName,
-              role: memberRole,
+              email: memberEmail,
               org: org.name,
             }
           ]
@@ -158,7 +158,7 @@ export default function OrgPage() {
     }));
 
     setMemberName('');
-    setMemberRole('');
+    setMemberEmail('');
     setShowMemberModal(false);
   }
 
@@ -226,7 +226,7 @@ export default function OrgPage() {
                     {visibleMembers.map(member => (
                       <div key={member.id} className="flex items-center justify-between text-sm">
                         <span className="text-gray-700">
-                          • {member.name} <span className="text-gray-500">({member.role})</span>
+                          • {member.name} <span className="text-gray-500">({member.email})</span>
                         </span>
                         {isAdmin && (
                           <button
@@ -358,10 +358,11 @@ export default function OrgPage() {
           />
 
           <FormInput
-            label="직책/역할"
-            value={memberRole}
-            onChange={setMemberRole}
-            placeholder="예: 개발자, 팀장, 매니저"
+            label="이메일"
+            value={memberEmail}
+            onChange={setMemberEmail}
+            type="email"
+            placeholder="구성원 이메일"
             required
           />
 

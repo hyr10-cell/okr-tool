@@ -7,8 +7,8 @@ interface Member {
   id: string;
   name: string;
   email: string;
-  role: 'ADMIN' | 'MANAGER' | 'MEMBER';
   org?: string;
+  dept?: string;
 }
 
 interface Organization {
@@ -18,11 +18,9 @@ interface Organization {
 
 const DEMO_ORGS: Organization[] = [
   { id: '1', name: '개발팀' },
-  { id: '2', name: '백엔드팀' },
-  { id: '3', name: '프론트엔드팀' },
-  { id: '4', name: '마케팅팀' },
-  { id: '5', name: '디자인팀' },
-  { id: '6', name: '데이터팀' },
+  { id: '2', name: '마케팅팀' },
+  { id: '3', name: '디자인팀' },
+  { id: '4', name: '데이터팀' },
 ];
 
 export default function AdminMembersPage() {
@@ -32,9 +30,8 @@ export default function AdminMembersPage() {
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<'ADMIN' | 'MANAGER' | 'MEMBER'>('MEMBER');
-  const [org, setOrg] = useState('');
-  const [showOrgSuggestions, setShowOrgSuggestions] = useState(false);
+  const [dept, setDept] = useState('');
+  const [showDeptSuggestions, setShowDeptSuggestions] = useState(false);
 
   useEffect(() => {
     fetchMembers();
@@ -51,9 +48,9 @@ export default function AdminMembersPage() {
       console.error('구성원 로드 실패:', err);
       // Demo data
       setMembers([
-        { id: '1', name: '관리자', email: 'admin@example.com', role: 'ADMIN', org: '개발팀' },
-        { id: '2', name: '팀장', email: 'manager@example.com', role: 'MANAGER', org: '개발팀' },
-        { id: '3', name: '팀원', email: 'member@example.com', role: 'MEMBER', org: '개발팀' },
+        { id: '1', name: '황유리', email: 'hyr@example.com', dept: '개발팀' },
+        { id: '2', name: '고종희', email: 'gkh@example.com', dept: '개발팀' },
+        { id: '3', name: '김개발', email: 'kim@example.com', dept: '마케팅팀' },
       ]);
     } finally {
       setLoading(false);
@@ -61,7 +58,7 @@ export default function AdminMembersPage() {
   }
 
   function handleCreateOrUpdate() {
-    if (!name.trim() || !email.trim()) {
+    if (!name.trim() || !email.trim() || !dept.trim()) {
       alert('필수 항목을 모두 입력해주세요');
       return;
     }
@@ -69,7 +66,7 @@ export default function AdminMembersPage() {
     if (editingMemberId) {
       setMembers(members.map(m =>
         m.id === editingMemberId
-          ? { ...m, name, email, role, org }
+          ? { ...m, name, email, dept }
           : m
       ));
     } else {
@@ -77,8 +74,7 @@ export default function AdminMembersPage() {
         id: Date.now().toString(),
         name,
         email,
-        role,
-        org,
+        dept,
       };
       setMembers([...members, newMember]);
     }
@@ -89,19 +85,17 @@ export default function AdminMembersPage() {
   function resetForm() {
     setName('');
     setEmail('');
-    setRole('MEMBER');
-    setOrg('');
+    setDept('');
     setEditingMemberId(null);
     setShowModal(false);
-    setShowOrgSuggestions(false);
+    setShowDeptSuggestions(false);
   }
 
   function handleEdit(member: Member) {
     setEditingMemberId(member.id);
     setName(member.name);
     setEmail(member.email);
-    setRole(member.role);
-    setOrg(member.org || '');
+    setDept(member.dept || '');
     setShowModal(true);
   }
 
@@ -116,29 +110,16 @@ export default function AdminMembersPage() {
     setShowModal(true);
   }
 
-  // 조직 자동완성 필터링
-  const filteredOrgs = org.trim()
+  // 부서 자동완성 필터링
+  const filteredDepts = dept.trim()
     ? DEMO_ORGS.filter(o =>
-        o.name.toLowerCase().includes(org.toLowerCase())
+        o.name.toLowerCase().includes(dept.toLowerCase())
       )
     : [];
 
   if (loading) {
     return <div className="text-center py-12">로드 중...</div>;
   }
-
-  const roleLabel = (role: string) => {
-    switch (role) {
-      case 'ADMIN':
-        return '관리자';
-      case 'MANAGER':
-        return '팀장';
-      case 'MEMBER':
-        return '구성원';
-      default:
-        return role;
-    }
-  };
 
   return (
     <div>
@@ -158,7 +139,6 @@ export default function AdminMembersPage() {
               <tr>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">이름</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">이메일</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">역할</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">부서</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">작업</th>
               </tr>
@@ -168,18 +148,7 @@ export default function AdminMembersPage() {
                 <tr key={member.id} className="hover:bg-gray-50 transition">
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">{member.name}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{member.email}</td>
-                  <td className="px-6 py-4 text-sm">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      member.role === 'ADMIN'
-                        ? 'bg-red-100 text-red-700'
-                        : member.role === 'MANAGER'
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'bg-gray-100 text-gray-700'
-                    }`}>
-                      {roleLabel(member.role)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{member.org || '-'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{member.dept || '-'}</td>
                   <td className="px-6 py-4 text-sm space-x-2">
                     <button
                       onClick={() => handleEdit(member)}
@@ -227,45 +196,32 @@ export default function AdminMembersPage() {
             required
           />
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              역할 <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value as 'ADMIN' | 'MANAGER' | 'MEMBER')}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-indigo-500"
-            >
-              <option value="MEMBER">구성원</option>
-              <option value="MANAGER">팀장</option>
-              <option value="ADMIN">관리자</option>
-            </select>
-          </div>
-
-          {/* 부서/조직 필드 (Autocomplete) */}
+          {/* 부서 필드 (Autocomplete) */}
           <div className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-2">부서 (선택사항)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              부서 <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
-              value={org}
+              value={dept}
               onChange={(e) => {
-                setOrg(e.target.value);
-                setShowOrgSuggestions(e.target.value.trim().length > 0);
+                setDept(e.target.value);
+                setShowDeptSuggestions(e.target.value.trim().length > 0);
               }}
-              onFocus={() => org.trim().length > 0 && setShowOrgSuggestions(true)}
+              onFocus={() => dept.trim().length > 0 && setShowDeptSuggestions(true)}
               placeholder="부서명을 입력하세요 (예: 개발팀)"
               className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-indigo-500"
             />
 
             {/* 부서 자동완성 드롭다운 */}
-            {showOrgSuggestions && filteredOrgs.length > 0 && (
+            {showDeptSuggestions && filteredDepts.length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10">
-                {filteredOrgs.map(organization => (
+                {filteredDepts.map(organization => (
                   <button
                     key={organization.id}
                     onClick={() => {
-                      setOrg(organization.name);
-                      setShowOrgSuggestions(false);
+                      setDept(organization.name);
+                      setShowDeptSuggestions(false);
                     }}
                     className="w-full text-left px-3 py-2 hover:bg-indigo-50 border-b border-gray-100 last:border-b-0 text-sm text-gray-900 font-medium"
                   >
