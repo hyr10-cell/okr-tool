@@ -27,6 +27,9 @@ export default function AdminMembersPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importText, setImportText] = useState('');
+  const [importResult, setImportResult] = useState<{ success: number; failed: number } | null>(null);
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -110,6 +113,46 @@ export default function AdminMembersPage() {
     setShowModal(true);
   }
 
+  function handleImport() {
+    if (!importText.trim()) {
+      alert('데이터를 입력해주세요');
+      return;
+    }
+
+    const lines = importText.trim().split('\n');
+    let success = 0;
+    let failed = 0;
+    const newMembers: Member[] = [];
+
+    for (const line of lines) {
+      const parts = line.split('\t').map(p => p.trim());
+      if (parts.length === 3 && parts[0] && parts[1] && parts[2]) {
+        const [name, email, dept] = parts;
+        const newMember: Member = {
+          id: Date.now().toString() + Math.random(),
+          name,
+          email,
+          dept,
+        };
+        newMembers.push(newMember);
+        success++;
+      } else if (line.trim()) {
+        failed++;
+      }
+    }
+
+    if (newMembers.length > 0) {
+      const updatedMembers = [...members, ...newMembers];
+      setMembers(updatedMembers);
+      setImportResult({ success, failed });
+      setImportText('');
+      setTimeout(() => {
+        setShowImportModal(false);
+        setImportResult(null);
+      }, 2000);
+    }
+  }
+
   // 부서 자동완성 필터링
   const filteredDepts = dept.trim()
     ? DEMO_ORGS.filter(o =>
@@ -125,7 +168,12 @@ export default function AdminMembersPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">구성원 관리</h1>
-        <Button onClick={handleOpenModal}>+ 구성원 추가</Button>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={() => setShowImportModal(true)}>
+            📋 일괄 import
+          </Button>
+          <Button onClick={handleOpenModal}>+ 구성원 추가</Button>
+        </div>
       </div>
 
       {members.length === 0 ? (
@@ -169,6 +217,61 @@ export default function AdminMembersPage() {
           </table>
         </div>
       )}
+
+      {/* Import Modal */}
+      <Modal
+        isOpen={showImportModal}
+        onClose={() => {
+          setShowImportModal(false);
+          setImportText('');
+          setImportResult(null);
+        }}
+        title="구성원 일괄 import"
+        showFooter={false}
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div className="bg-blue-50 rounded-lg p-3 text-sm text-blue-700">
+            <p className="font-medium mb-1">형식: 이름 [탭] 이메일 [탭] 부서</p>
+            <p className="text-xs">예시:</p>
+            <code className="text-xs bg-white px-2 py-1 rounded block mt-1">Beth Ahn	yja@wincubemkt.com	해외플랫폼사업실</code>
+          </div>
+
+          <textarea
+            value={importText}
+            onChange={(e) => setImportText(e.target.value)}
+            placeholder="엑셀에서 복붙하세요..."
+            rows={8}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-indigo-500 font-mono"
+          />
+
+          {importResult && (
+            <div className={`rounded-lg p-3 text-sm ${
+              importResult.failed === 0
+                ? 'bg-green-50 text-green-700'
+                : 'bg-yellow-50 text-yellow-700'
+            }`}>
+              ✅ {importResult.success}명 추가됨{importResult.failed > 0 && ` (${importResult.failed}행 오류)`}
+            </div>
+          )}
+
+          <div className="flex gap-2 justify-end pt-4 border-t">
+            <Button
+              onClick={() => {
+                setShowImportModal(false);
+                setImportText('');
+                setImportResult(null);
+              }}
+              variant="secondary"
+            >
+              취소
+            </Button>
+            <Button onClick={handleImport}>
+              import
+            </Button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Create/Edit Modal */}
       <Modal
