@@ -55,42 +55,6 @@ export default function OrgPage() {
       console.error('조직 로드 실패:', err);
       // Demo data fallback
       setOrgs([
-        {
-          id: '1',
-          name: '개발팀',
-          lead: '황유리',
-          members: [
-            { id: 'm1', name: '황유리', email: 'hyr@example.com', org: '개발팀', dept: '개발팀' },
-            { id: 'm2', name: '고종희', email: 'gkh@example.com', org: '개발팀', dept: '개발팀' },
-          ],
-          children: [
-            {
-              id: '1-1',
-              name: '백엔드팀',
-              lead: '고종희',
-              parentId: '1',
-              members: [
-                { id: 'm3', name: '개발자A', email: 'devA@example.com', org: '백엔드팀', dept: '개발팀' },
-              ],
-            },
-            {
-              id: '1-2',
-              name: '프론트엔드팀',
-              lead: '황유리',
-              parentId: '1',
-              members: [
-                { id: 'm4', name: '개발자B', email: 'devB@example.com', org: '프론트엔드팀', dept: '개발팀' },
-              ],
-            },
-          ],
-        },
-        {
-          id: '2',
-          name: '마케팅팀',
-          lead: undefined,
-          members: [],
-          children: [],
-        },
       ]);
     } finally {
       setLoading(false);
