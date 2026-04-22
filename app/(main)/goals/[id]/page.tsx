@@ -46,29 +46,78 @@ export default function GoalDetailPage({ params }: { params: Promise<{ id: strin
   }, []);
 
   async function fetchGoal() {
-    const res = await fetch(`/api/goals/${resolvedParams.id}`);
-    if (res.ok) {
-      const data = await res.json();
-      let goal = data.data;
-
-      // 진행률이 100%면 자동으로 완료 상태로 변경
-      const latestProgress = goal.checkIns[0]?.progress ?? 0;
-      if (latestProgress === 100 && goal.status !== 'COMPLETED') {
-        goal = { ...goal, status: 'COMPLETED' };
+    try {
+      // localStorage에서 먼저 찾기
+      const userGoalsStr = localStorage.getItem('userGoals');
+      if (userGoalsStr) {
+        const userGoals = JSON.parse(userGoalsStr);
+        const userGoal = userGoals.find((g: any) => g.id === resolvedParams.id);
+        if (userGoal) {
+          setGoal(userGoal);
+          setLoading(false);
+          return;
+        }
       }
 
-      setGoal(goal);
+      // API에서 찾기
+      const res = await fetch(`/api/goals/${resolvedParams.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        let goal = data.data;
+
+        // 진행률이 100%면 자동으로 완료 상태로 변경
+        const latestProgress = goal.checkIns[0]?.progress ?? 0;
+        if (latestProgress === 100 && goal.status !== 'COMPLETED') {
+          goal = { ...goal, status: 'COMPLETED' };
+        }
+
+        setGoal(goal);
+      }
+    } catch (err) {
+      console.error('목표 조회 실패:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   async function submitComment(checkinId: string) {
     if (!comment.trim()) return;
-    await fetch(`/api/goals/${resolvedParams.id}/checkins/${checkinId}/comments`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: comment }),
-    });
+
+    const newComment = {
+      id: Date.now().toString(),
+      content: comment,
+      author: { name: user?.name || '익명' },
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      // localStorage에 코멘트 저장
+      const userGoalsStr = localStorage.getItem('userGoals');
+      if (userGoalsStr) {
+        const userGoals = JSON.parse(userGoalsStr);
+        const goalIndex = userGoals.findIndex((g: any) => g.id === resolvedParams.id);
+        if (goalIndex !== -1 && userGoals[goalIndex].checkIns) {
+          const checkinIndex = userGoals[goalIndex].checkIns.findIndex((c: any) => c.id === checkinId);
+          if (checkinIndex !== -1) {
+            if (!userGoals[goalIndex].checkIns[checkinIndex].comments) {
+              userGoals[goalIndex].checkIns[checkinIndex].comments = [];
+            }
+            userGoals[goalIndex].checkIns[checkinIndex].comments.push(newComment);
+            localStorage.setItem('userGoals', JSON.stringify(userGoals));
+          }
+        }
+      }
+
+      // API에도 요청
+      await fetch(`/api/goals/${resolvedParams.id}/checkins/${checkinId}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: comment }),
+      });
+    } catch (err) {
+      console.error('코멘트 저장 실패:', err);
+    }
+
     setComment('');
     setActiveCheckinId(null);
     fetchGoal();
@@ -77,7 +126,7 @@ export default function GoalDetailPage({ params }: { params: Promise<{ id: strin
   if (loading) return <div className="text-center py-12 text-gray-500">로드 중...</div>;
   if (!goal) return <div className="text-center py-12 text-gray-500">목표를 찾을 수 없습니다.</div>;
 
-  const latestProgress = goal.checkIns[0]?.progress ?? 0;
+  const latestProgress = goal.checkIns?.[0]?.progress ?? 0;
 
   return (
     <div className="max-w-2xl">
@@ -115,7 +164,7 @@ export default function GoalDetailPage({ params }: { params: Promise<{ id: strin
       </div>
 
       <h2 className="text-lg font-semibold text-gray-900 mb-3">체크인 히스토리</h2>
-      {goal.checkIns.length === 0 ? (
+      {!goal.checkIns || goal.checkIns.length === 0 ? (
         <div className="text-center py-8 text-gray-400 text-sm">아직 체크인이 없습니다.</div>
       ) : (
         <div className="space-y-4">

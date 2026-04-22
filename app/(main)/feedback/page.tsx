@@ -30,6 +30,7 @@ const DEMO_MEMBERS: Member[] = [
 ];
 
 export default function FeedbackPage() {
+  const [user, setUser] = useState<any>(null);
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -41,46 +42,38 @@ export default function FeedbackPage() {
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
     fetchFeedbacks();
   }, []);
 
   async function fetchFeedbacks() {
     try {
       const res = await fetch('/api/feedback');
+      let apiFeedbacks: Feedback[] = [];
       if (res.ok) {
         const data = await res.json();
-        setFeedbacks(data.data || []);
+        apiFeedbacks = data.data || [];
       }
+
+      // localStorage에서 사용자가 만든 피드백 로드
+      const userFeedbacksStr = localStorage.getItem('userFeedbacks');
+      const userFeedbacks = userFeedbacksStr ? JSON.parse(userFeedbacksStr) : [];
+
+      // API 피드백과 사용자 피드백 병합 (사용자 피드백이 우선)
+      const allFeedbacks = [...userFeedbacks, ...apiFeedbacks];
+
+      // 중복 제거 (같은 id는 userFeedbacks 버전 사용)
+      const uniqueFeedbacks = Array.from(
+        new Map(allFeedbacks.map(fb => [fb.id, fb])).values()
+      );
+
+      setFeedbacks(uniqueFeedbacks);
     } catch (err) {
       console.error('피드백 로드 실패:', err);
-      // Demo data fallback
-      setFeedbacks([
-        {
-          id: '1',
-          from: '팀장',
-          type: 'KEEP_GOING',
-          content: '좋은 아이디어 잘 반영했습니다!',
-          createdAt: '2024-03-15',
-          direction: 'received',
-        },
-        {
-          id: '2',
-          from: '관리자',
-          type: 'IMPROVE',
-          content: '다음엔 더 빠른 진행이 필요합니다.',
-          createdAt: '2024-03-10',
-          direction: 'received',
-        },
-        {
-          id: '3',
-          from: '동료',
-          type: 'KEEP_GOING',
-          content: '공동 프로젝트에서 훌륭한 협업 감사합니다.',
-          createdAt: '2024-03-05',
-          direction: 'sent',
-          recipient: '김팀원',
-        },
-      ]);
+      setFeedbacks([]);
     } finally {
       setLoading(false);
     }
@@ -94,13 +87,30 @@ export default function FeedbackPage() {
 
     const newFeedback: Feedback = {
       id: Date.now().toString(),
-      from: '나',
+      from: user?.name || '나',
       type: feedbackType,
       content,
       createdAt: new Date().toISOString().split('T')[0],
       direction: 'sent',
       recipient: recipientName,
     };
+
+    try {
+      // localStorage에 피드백 저장
+      const userFeedbacksStr = localStorage.getItem('userFeedbacks');
+      const userFeedbacks = userFeedbacksStr ? JSON.parse(userFeedbacksStr) : [];
+      userFeedbacks.unshift(newFeedback);
+      localStorage.setItem('userFeedbacks', JSON.stringify(userFeedbacks));
+
+      // API에도 요청
+      fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newFeedback),
+      }).catch(err => console.error('피드백 저장 실패:', err));
+    } catch (err) {
+      console.error('localStorage 저장 실패:', err);
+    }
 
     setFeedbacks([newFeedback, ...feedbacks]);
     resetForm();

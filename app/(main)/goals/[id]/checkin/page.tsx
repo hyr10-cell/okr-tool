@@ -60,19 +60,53 @@ export default function CheckInPage({ params }: { params: Promise<{ id: string }
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const res = await fetch(`/api/goals/${resolvedParams.id}/checkins`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        progress,
-        status,
-        note,
-        attachmentCount: attachments.length,
-        attachmentNames: attachments.map(f => f.name),
-      }),
-    });
-    setLoading(false);
-    if (res.ok) router.push(`/goals/${resolvedParams.id}`);
+
+    const newCheckIn = {
+      id: Date.now().toString(),
+      progress,
+      status,
+      note,
+      createdAt: new Date().toISOString(),
+      comments: [],
+      attachmentCount: attachments.length,
+      attachmentNames: attachments.map(f => f.name),
+    };
+
+    try {
+      // localStorage에 체크인 저장
+      const userGoalsStr = localStorage.getItem('userGoals');
+      if (userGoalsStr) {
+        const userGoals = JSON.parse(userGoalsStr);
+        const goalIndex = userGoals.findIndex((g: any) => g.id === resolvedParams.id);
+        if (goalIndex !== -1) {
+          if (!userGoals[goalIndex].checkIns) {
+            userGoals[goalIndex].checkIns = [];
+          }
+          userGoals[goalIndex].checkIns.unshift(newCheckIn);
+          userGoals[goalIndex].progress = progress;
+          userGoals[goalIndex].status = status;
+          localStorage.setItem('userGoals', JSON.stringify(userGoals));
+        }
+      }
+
+      // API에도 요청
+      await fetch(`/api/goals/${resolvedParams.id}/checkins`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          progress,
+          status,
+          note,
+          attachmentCount: attachments.length,
+          attachmentNames: attachments.map(f => f.name),
+        }),
+      });
+    } catch (error) {
+      console.error('체크인 저장 실패:', error);
+    } finally {
+      setLoading(false);
+      router.push(`/goals/${resolvedParams.id}`);
+    }
   }
 
   if (pageLoading) {

@@ -23,6 +23,7 @@ interface Activity {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const [user, setUser] = useState<any>(null);
   const [stats, setStats] = useState({
     total: 0,
     onTrack: 0,
@@ -34,25 +35,45 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
     fetchDashboardData();
   }, []);
 
   async function fetchDashboardData() {
     try {
-      const res = await fetch('/api/goals');
+      const currentUser = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!) : null;
+      const url = currentUser ? `/api/goals?user=${encodeURIComponent(currentUser.name)}` : '/api/goals';
+      const res = await fetch(url);
+      let apiGoals: Goal[] = [];
+
       if (res.ok) {
         const data = await res.json();
-        const goals = data.data || [];
-
-        const newStats = {
-          total: goals.length,
-          onTrack: goals.filter((g: Goal) => g.status === 'ON_TRACK').length,
-          offTrack: goals.filter((g: Goal) => g.status === 'OFF_TRACK').length,
-          completed: goals.filter((g: Goal) => g.status === 'COMPLETED').length,
-          pending: goals.filter((g: Goal) => g.status === 'PENDING').length,
-        };
-        setStats(newStats);
+        apiGoals = data.data || [];
       }
+
+      // localStorage에서 사용자가 만든 목표 로드
+      const userGoalsStr = localStorage.getItem('userGoals');
+      const userGoals = userGoalsStr ? JSON.parse(userGoalsStr) : [];
+
+      // API 목표와 사용자 목표 병합 (사용자 목표가 우선)
+      const allGoals = [...userGoals, ...apiGoals];
+
+      // 중복 제거 (같은 id는 userGoals 버전 사용)
+      const uniqueGoals = Array.from(
+        new Map(allGoals.map(goal => [goal.id, goal])).values()
+      );
+
+      const newStats = {
+        total: uniqueGoals.length,
+        onTrack: uniqueGoals.filter((g: Goal) => g.status === 'ON_TRACK').length,
+        offTrack: uniqueGoals.filter((g: Goal) => g.status === 'OFF_TRACK').length,
+        completed: uniqueGoals.filter((g: Goal) => g.status === 'COMPLETED').length,
+        pending: uniqueGoals.filter((g: Goal) => g.status === 'PENDING').length,
+      };
+      setStats(newStats);
     } catch (err) {
       console.error('대시보드 데이터 로드 실패:', err);
       // Demo data
