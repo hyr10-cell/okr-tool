@@ -18,13 +18,6 @@ interface Goal {
   sharedWith?: string[];
 }
 
-const DEMO_MEMBERS = [
-  { id: '1', name: '나', dept: 'engineering' },
-  { id: '2', name: '김팀장', dept: 'engineering' },
-  { id: '3', name: '이백엔드', dept: 'engineering' },
-  { id: '4', name: '박프론트', dept: 'engineering' },
-  { id: '5', name: '정데이터', dept: 'engineering' },
-];
 
 export default function GoalsPage() {
   const router = useRouter();
@@ -145,15 +138,19 @@ export default function GoalsPage() {
     setShowModal(false);
   }
 
+  // userMembers에서 부서별 필터링
+  const userMembersStr = localStorage.getItem('userMembers');
+  const userMembers = userMembersStr ? JSON.parse(userMembersStr) : [];
+
+  const departmentMembers = user?.org
+    ? userMembers.filter((m: any) => m.dept === user.org)
+    : userMembers;
+
   const filteredMembers = owner.trim()
-    ? DEMO_MEMBERS.filter(m =>
+    ? departmentMembers.filter((m: any) =>
         m.name.toLowerCase().includes(owner.toLowerCase())
       )
     : [];
-
-  const departmentMembers = user?.org
-    ? DEMO_MEMBERS.filter(m => m.dept === user.org)
-    : DEMO_MEMBERS;
 
   const handleEditGoal = (goal: Goal, e: React.MouseEvent) => {
     e.stopPropagation();
