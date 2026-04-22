@@ -65,7 +65,13 @@ export default function OrgPage() {
         new Map(allOrgs.map(org => [org.id, org])).values()
       );
 
-      setOrgs(uniqueOrgs);
+      // 현재 사용자의 부서에 해당하는 조직만 필터링
+      const currentUser = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!) : null;
+      const filteredOrgs = currentUser?.org
+        ? uniqueOrgs.filter(org => org.name === currentUser.org)
+        : uniqueOrgs;
+
+      setOrgs(filteredOrgs);
     } catch (err) {
       console.error('조직 로드 실패:', err);
       setOrgs([]);
