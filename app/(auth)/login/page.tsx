@@ -20,7 +20,44 @@ export default function LoginPage() {
     setLoading(true);
     setError('');
 
-    const account = DEMO_ACCOUNTS.find(a => a.email === email);
+    // 1. DEMO_ACCOUNTS에서 찾기
+    let account = DEMO_ACCOUNTS.find(a => a.email === email);
+
+    // 2. 없으면 localStorage의 userMembers에서 찾기
+    if (!account) {
+      const userMembersStr = localStorage.getItem('userMembers');
+      const userMembers = userMembersStr ? JSON.parse(userMembersStr) : [];
+      const member = userMembers.find((m: any) => m.email === email);
+      if (member) {
+        account = {
+          email: member.email,
+          name: member.name,
+          role: 'MEMBER',
+          org: member.dept,
+        };
+      }
+    }
+
+    // 3. 아직 없으면 API에서 찾기
+    if (!account) {
+      try {
+        const res = await fetch('/api/org/members');
+        if (res.ok) {
+          const data = await res.json();
+          const apiMember = data.data.find((m: any) => m.email === email);
+          if (apiMember) {
+            account = {
+              email: apiMember.email,
+              name: apiMember.name,
+              role: 'MEMBER',
+              org: apiMember.dept || apiMember.org,
+            };
+          }
+        }
+      } catch (err) {
+        console.error('API 조회 실패:', err);
+      }
+    }
 
     if (!account) {
       setError('존재하지 않는 계정입니다.');
