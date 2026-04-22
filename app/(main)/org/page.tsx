@@ -53,9 +53,7 @@ export default function OrgPage() {
       }
     } catch (err) {
       console.error('조직 로드 실패:', err);
-      // Demo data fallback
-      setOrgs([
-      ]);
+      setOrgs([]);
     } finally {
       setLoading(false);
     }
