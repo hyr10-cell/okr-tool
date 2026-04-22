@@ -1,12 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const DEMO_MEMBERS = [
-  { id: '1', name: '관리자', email: 'admin@example.com', role: 'ADMIN', org: '개발팀' },
-  { id: '2', name: '팀장', email: 'manager@example.com', role: 'MANAGER', org: '개발팀' },
-  { id: '3', name: '팀원', email: 'member@example.com', role: 'MEMBER', org: '개발팀' },
-  { id: '4', name: '개발자A', email: 'devA@example.com', role: 'MEMBER', org: '백엔드팀' },
-  { id: '5', name: '개발자B', email: 'devB@example.com', role: 'MEMBER', org: '프론트엔드팀' },
-];
+const DEMO_MEMBERS: any[] = [];
 
 export async function GET() {
   try {
