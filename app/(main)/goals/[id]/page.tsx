@@ -104,6 +104,19 @@ export default function GoalDetailPage({ params }: { params: Promise<{ id: strin
             }
             userGoals[goalIndex].checkIns[checkinIndex].comments.push(newComment);
             localStorage.setItem('userGoals', JSON.stringify(userGoals));
+
+            // 활동 기록 저장
+            const activitiesStr = localStorage.getItem('userActivities');
+            const activities = activitiesStr ? JSON.parse(activitiesStr) : [];
+            activities.unshift({
+              id: Date.now().toString(),
+              type: 'comment',
+              title: goal?.title || '목표',
+              description: `코멘트: ${comment.substring(0, 50)}${comment.length > 50 ? '...' : ''}`,
+              timestamp: new Date().toISOString(),
+              goalId: resolvedParams.id,
+            });
+            localStorage.setItem('userActivities', JSON.stringify(activities.slice(0, 20))); // 최근 20개만 보관
           }
         }
       }

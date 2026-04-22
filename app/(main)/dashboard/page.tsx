@@ -93,10 +93,19 @@ export default function DashboardPage() {
 
     try {
       const res = await fetch('/api/activities');
+      let apiActivities: Activity[] = [];
       if (res.ok) {
         const data = await res.json();
-        setActivities(data.data || []);
+        apiActivities = data.data || [];
       }
+
+      // localStorage에서 사용자 활동 로드
+      const userActivitiesStr = localStorage.getItem('userActivities');
+      const userActivities = userActivitiesStr ? JSON.parse(userActivitiesStr) : [];
+
+      // 활동 병합 (최근것부터)
+      const allActivities = [...userActivities, ...apiActivities];
+      setActivities(allActivities.slice(0, 10)); // 최근 10개만 표시
     } catch (err) {
       setActivities([]);
     } finally {
