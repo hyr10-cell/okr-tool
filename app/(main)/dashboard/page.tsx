@@ -66,12 +66,17 @@ export default function DashboardPage() {
         new Map(allGoals.map(goal => [goal.id, goal])).values()
       );
 
+      // 담당자이거나 리뷰어인 목표만 필터링
+      const myGoals = uniqueGoals.filter((g: Goal) =>
+        g.owner?.name === currentUser?.name || g.sharedWith?.includes(currentUser?.name)
+      );
+
       const newStats = {
-        total: uniqueGoals.length,
-        onTrack: uniqueGoals.filter((g: Goal) => g.status === 'ON_TRACK').length,
-        offTrack: uniqueGoals.filter((g: Goal) => g.status === 'OFF_TRACK').length,
-        completed: uniqueGoals.filter((g: Goal) => g.status === 'COMPLETED').length,
-        pending: uniqueGoals.filter((g: Goal) => g.status === 'PENDING').length,
+        total: myGoals.length,
+        onTrack: myGoals.filter((g: Goal) => g.status === 'ON_TRACK').length,
+        offTrack: myGoals.filter((g: Goal) => g.status === 'OFF_TRACK').length,
+        completed: myGoals.filter((g: Goal) => g.status === 'COMPLETED').length,
+        pending: myGoals.filter((g: Goal) => g.status === 'PENDING').length,
       };
       setStats(newStats);
     } catch (err) {
