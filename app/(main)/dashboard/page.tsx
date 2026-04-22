@@ -98,33 +98,7 @@ export default function DashboardPage() {
         setActivities(data.data || []);
       }
     } catch (err) {
-      // Demo data
-      setActivities([
-        {
-          id: '1',
-          type: 'goal_status',
-          title: 'API 보안 강화',
-          description: '상태 변경 (순항 → 난항)',
-          timestamp: '2024-03-20T14:30:00',
-          goalId: '2',
-        },
-        {
-          id: '2',
-          type: 'checkin',
-          title: '서비스 성능 개선',
-          description: '체크인 제출',
-          timestamp: '2024-03-19T10:15:00',
-          goalId: '1',
-        },
-        {
-          id: '3',
-          type: 'feedback',
-          title: '좋은 진행 방향입니다',
-          description: '피드백 수신',
-          timestamp: '2024-03-18T09:45:00',
-          goalId: '1',
-        },
-      ]);
+      setActivities([]);
     } finally {
       setLoading(false);
     }
