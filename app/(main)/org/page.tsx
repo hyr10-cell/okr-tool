@@ -47,10 +47,25 @@ export default function OrgPage() {
   async function fetchOrganizations() {
     try {
       const res = await fetch('/api/org');
+      let apiOrgs: Organization[] = [];
       if (res.ok) {
         const data = await res.json();
-        setOrgs(data.data || []);
+        apiOrgs = data.data || [];
       }
+
+      // localStorage에서 사용자가 만든 조직 로드
+      const userOrgsStr = localStorage.getItem('userOrgs');
+      const userOrgs = userOrgsStr ? JSON.parse(userOrgsStr) : [];
+
+      // API 조직과 사용자 조직 병합
+      const allOrgs = [...userOrgs, ...apiOrgs];
+
+      // 중복 제거 (같은 id는 userOrgs 버전 사용)
+      const uniqueOrgs = Array.from(
+        new Map(allOrgs.map(org => [org.id, org])).values()
+      );
+
+      setOrgs(uniqueOrgs);
     } catch (err) {
       console.error('조직 로드 실패:', err);
       setOrgs([]);
@@ -75,12 +90,23 @@ export default function OrgPage() {
       return;
     }
 
+    const userOrgsStr = localStorage.getItem('userOrgs');
+    const userOrgs = userOrgsStr ? JSON.parse(userOrgsStr) : [];
+
+    let updatedUserOrgs: Organization[];
+    let updatedOrgs: Organization[];
+
     if (editingOrgId) {
-      setOrgs(orgs.map(o =>
+      updatedUserOrgs = userOrgs.map((o: Organization) =>
         o.id === editingOrgId
           ? { ...o, name: orgName, lead: leadName || undefined }
           : o
-      ));
+      );
+      updatedOrgs = orgs.map(o =>
+        o.id === editingOrgId
+          ? { ...o, name: orgName, lead: leadName || undefined }
+          : o
+      );
     } else {
       const newOrg: Organization = {
         id: Date.now().toString(),
@@ -89,9 +115,12 @@ export default function OrgPage() {
         members: [],
         children: [],
       };
-      setOrgs([...orgs, newOrg]);
+      updatedUserOrgs = [...userOrgs, newOrg];
+      updatedOrgs = [...orgs, newOrg];
     }
 
+    setOrgs(updatedOrgs);
+    localStorage.setItem('userOrgs', JSON.stringify(updatedUserOrgs));
     resetForm();
   }
 
@@ -101,7 +130,7 @@ export default function OrgPage() {
       return;
     }
 
-    setOrgs(orgs.map(org => {
+    const updatedOrgs = orgs.map(org => {
       if (org.id === selectedOrgId) {
         return {
           ...org,
@@ -117,7 +146,31 @@ export default function OrgPage() {
         };
       }
       return org;
-    }));
+    });
+
+    setOrgs(updatedOrgs);
+
+    // localStorage도 업데이트
+    const userOrgsStr = localStorage.getItem('userOrgs');
+    const userOrgs = userOrgsStr ? JSON.parse(userOrgsStr) : [];
+    const updatedUserOrgs = userOrgs.map((org: Organization) => {
+      if (org.id === selectedOrgId) {
+        return {
+          ...org,
+          members: [
+            ...org.members,
+            {
+              id: Date.now().toString(),
+              name: memberName,
+              email: memberEmail,
+              org: org.name,
+            }
+          ]
+        };
+      }
+      return org;
+    });
+    localStorage.setItem('userOrgs', JSON.stringify(updatedUserOrgs));
 
     setMemberName('');
     setMemberEmail('');
@@ -140,16 +193,34 @@ export default function OrgPage() {
 
   function handleDelete(orgId: string) {
     if (confirm('이 조직을 삭제하시겠습니까?')) {
-      setOrgs(orgs.filter(o => o.id !== orgId));
+      const updatedOrgs = orgs.filter(o => o.id !== orgId);
+      setOrgs(updatedOrgs);
+
+      // localStorage도 업데이트
+      const userOrgsStr = localStorage.getItem('userOrgs');
+      const userOrgs = userOrgsStr ? JSON.parse(userOrgsStr) : [];
+      const updatedUserOrgs = userOrgs.filter((o: Organization) => o.id !== orgId);
+      localStorage.setItem('userOrgs', JSON.stringify(updatedUserOrgs));
     }
   }
 
   function handleDeleteMember(orgId: string, memberId: string) {
-    setOrgs(orgs.map(org =>
+    const updatedOrgs = orgs.map(org =>
       org.id === orgId
         ? { ...org, members: org.members.filter(m => m.id !== memberId) }
         : org
-    ));
+    );
+    setOrgs(updatedOrgs);
+
+    // localStorage도 업데이트
+    const userOrgsStr = localStorage.getItem('userOrgs');
+    const userOrgs = userOrgsStr ? JSON.parse(userOrgsStr) : [];
+    const updatedUserOrgs = userOrgs.map((org: Organization) =>
+      org.id === orgId
+        ? { ...org, members: org.members.filter(m => m.id !== memberId) }
+        : org
+    );
+    localStorage.setItem('userOrgs', JSON.stringify(updatedUserOrgs));
   }
 
   const renderOrganization = (org: Organization, level: number = 0) => {
