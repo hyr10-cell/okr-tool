@@ -64,13 +64,7 @@ export default function AdminMembersPage() {
       setMembers(uniqueMembers);
     } catch (err) {
       console.error('구성원 로드 실패:', err);
-      // Demo data
-      const demoMembers = [
-        { id: '1', name: '황유리', email: 'hyr@example.com', dept: '개발팀' },
-        { id: '2', name: '고종희', email: 'gkh@example.com', dept: '개발팀' },
-        { id: '3', name: '김개발', email: 'kim@example.com', dept: '마케팅팀' },
-      ];
-      setMembers(demoMembers);
+      setMembers([]);
     } finally {
       setLoading(false);
     }
