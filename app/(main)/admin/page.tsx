@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 const MENU = [
   { href: '/admin/members', label: '👥 멤버 관리', desc: '역할 설정, 리뷰어 지정' },
   { href: '/admin/org-upload', label: '📂 조직도 업로드', desc: 'Flex HR CSV 파일 업로드' },
-  { href: '/admin/cycles', label: '🔄 사이클 관리', desc: '분기 목표 주기 생성·관리' },
 ];
 
 export default function AdminPage() {
