@@ -132,6 +132,11 @@ export default function FeedbackPage() {
     : [];
 
   const filteredFeedbacks = feedbacks.filter(fb => {
+    // 내가 보낸 피드백(from === user.name)이거나 받은 피드백(recipient === user.name)만 표시
+    const isSent = fb.from === user?.name;
+    const isReceived = fb.recipient === user?.name;
+    if (!isSent && !isReceived) return false;
+
     if (filterDirection !== 'all' && fb.direction !== filterDirection) return false;
     if (filterType !== 'all' && fb.type !== filterType) return false;
     return true;

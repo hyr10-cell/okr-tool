@@ -174,6 +174,11 @@ export default function GoalsPage() {
   };
 
   const filteredGoals = goals.filter((goal) => {
+    // 담당자이거나 리뷰어인 목표만 표시
+    const isOwner = goal.owner?.name === user?.name;
+    const isReviewer = goal.sharedWith?.includes(user?.name);
+    if (!isOwner && !isReviewer) return false;
+
     if (statusFilter && goal.status !== statusFilter) return false;
     if (levelFilter && goal.level !== levelFilter) return false;
     if (searchQuery && !goal.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
