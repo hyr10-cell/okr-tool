@@ -106,15 +106,15 @@ export default function LoginPage() {
           </div>
 
           {/* 통계 카드 */}
-          <div className="flex gap-3">
+          <div className="flex gap-4">
             {[
               { value: '127', label: '활성 목표' },
               { value: '8', label: '이번 주 체크인' },
               { value: '94%', label: '참여율' },
             ].map((stat) => (
-              <div key={stat.label} className="flex-1 p-4 rounded-2xl bg-white bg-opacity-10 border border-white border-opacity-15 backdrop-blur-md">
-                <div className="text-2xl font-bold" style={{ letterSpacing: '-0.02em' }}>{stat.value}</div>
-                <div className="text-xs opacity-80 mt-1">{stat.label}</div>
+              <div key={stat.label} className="flex-1 p-5 rounded-2xl bg-white bg-opacity-15 border border-white border-opacity-20 backdrop-blur-md hover:bg-opacity-20 transition">
+                <div className="text-3xl font-bold" style={{ letterSpacing: '-0.02em' }}>{stat.value}</div>
+                <div className="text-sm opacity-90 mt-2 font-medium">{stat.label}</div>
               </div>
             ))}
           </div>
