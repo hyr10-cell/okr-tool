@@ -356,7 +356,7 @@ export default function GoalsPage() {
 
             {showOwnerSuggestions && filteredMembers.length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10">
-                {filteredMembers.map(member => (
+                {filteredMembers.map((member: any) => (
                   <button
                     key={member.id}
                     onClick={() => {
@@ -375,7 +375,7 @@ export default function GoalsPage() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">리뷰어 (선택)</label>
             <div className="space-y-2">
-              {departmentMembers.map(member => (
+              {departmentMembers.map((member: any) => (
                 <label key={member.id} className="flex items-center cursor-pointer">
                   <input
                     type="checkbox"

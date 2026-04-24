@@ -9,6 +9,8 @@ interface Goal {
   id: string;
   title: string;
   status: string;
+  owner?: { name: string };
+  sharedWith?: string[];
 }
 
 interface Activity {
@@ -68,7 +70,7 @@ export default function DashboardPage() {
 
       // 담당자이거나 리뷰어인 목표만 필터링
       const myGoals = uniqueGoals.filter((g: Goal) =>
-        g.owner?.name === currentUser?.name || g.sharedWith?.includes(currentUser?.name)
+        g.owner?.name === currentUser?.name || g.sharedWith?.includes(currentUser?.name ?? '')
       );
 
       const newStats = {
