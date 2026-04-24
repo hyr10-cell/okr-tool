@@ -122,11 +122,11 @@ export default function GoalDetailPage({ params }: { params: Promise<{ id: strin
         }
       }
 
-      // API에도 요청
+      // API에도 요청 (goal 정보 함께 전송)
       await fetch(`/api/goals/${resolvedParams.id}/checkins/${checkinId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: comment }),
+        body: JSON.stringify({ content: comment, goal }),
       });
     } catch (err) {
       console.error('코멘트 저장 실패:', err);
