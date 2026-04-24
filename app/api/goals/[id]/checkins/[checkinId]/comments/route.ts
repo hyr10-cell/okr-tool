@@ -8,45 +8,20 @@ export async function POST(
   try {
     const resolvedParams = await params;
     const body = await request.json();
-    const { content } = body;
-
-    // localStorage에서 목표 정보 조회
-    let goal = null;
-    try {
-      const userGoalsStr = typeof window !== 'undefined' ? localStorage.getItem('userGoals') : null;
-      const userGoals = userGoalsStr ? JSON.parse(userGoalsStr) : [];
-      goal = userGoals.find((g: any) => g.id === resolvedParams.id);
-    } catch (e) {
-      console.error('Failed to parse goals:', e);
-    }
+    const { content, goal } = body;
 
     // 담당자와 리뷰어의 이메일 수집
     const recipients: string[] = [];
 
     if (goal) {
       // 담당자(owner)의 이메일
-      if (goal.owner?.email) {
-        recipients.push(goal.owner.email);
+      const ownerEmail = goal.owner?.email;
+
+      if (ownerEmail) {
+        recipients.push(ownerEmail);
       }
 
-      // 리뷰어(sharedWith)의 이메일
-      if (goal.sharedWith && goal.sharedWith.length > 0) {
-        const userMembersStr = typeof window !== 'undefined' ? localStorage.getItem('userMembers') : null;
-        let members: any[] = [];
-
-        try {
-          members = userMembersStr ? JSON.parse(userMembersStr) : [];
-        } catch (e) {
-          console.error('Failed to parse members:', e);
-        }
-
-        for (const reviewer of goal.sharedWith) {
-          const member = members.find(m => m.name === reviewer);
-          if (member?.email) {
-            recipients.push(member.email);
-          }
-        }
-      }
+      // 리뷰어(sharedWith)의 이메일 - 나중에 DB 구현 시 추가
 
       // 알림 발송
       if (recipients.length > 0) {

@@ -36,6 +36,7 @@ export default function GoalsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [levelFilter, setLevelFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
@@ -86,6 +87,8 @@ export default function GoalsPage() {
   }
 
   async function handleCreateGoal() {
+    if (isSaving) return;
+
     if (!title.trim() || !startDate || !endDate) {
       alert('필수 항목을 모두 입력해주세요');
       return;
@@ -95,6 +98,8 @@ export default function GoalsPage() {
       alert('종료일이 시작일보다 나중이어야 합니다');
       return;
     }
+
+    setIsSaving(true);
 
     const goalData: Goal = {
       id: editingGoalId || Date.now().toString(),
@@ -153,6 +158,7 @@ export default function GoalsPage() {
     setSharedWith([]);
     setEditingGoalId(null);
     setShowModal(false);
+    setIsSaving(false);
   }
 
   // userMembers에서 부서별 필터링

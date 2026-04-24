@@ -89,7 +89,7 @@ export default function CheckInPage({ params }: { params: Promise<{ id: string }
         }
       }
 
-      // API에도 요청
+      // API에도 요청 (goal 정보 함께 전송)
       await fetch(`/api/goals/${resolvedParams.id}/checkins`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -99,6 +99,7 @@ export default function CheckInPage({ params }: { params: Promise<{ id: string }
           note,
           attachmentCount: attachments.length,
           attachmentNames: attachments.map(f => f.name),
+          goal, // goal 정보 함께 전송
         }),
       });
 

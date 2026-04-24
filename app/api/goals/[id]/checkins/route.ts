@@ -8,44 +8,30 @@ export async function POST(
   try {
     const resolvedParams = await params;
     const body = await request.json();
-    const { progress, status, note } = body;
+    const { progress, status, note, goal } = body;
 
-    // localStorage에서 목표 정보 조회
-    let goal = null;
-    try {
-      const userGoalsStr = typeof window !== 'undefined' ? localStorage.getItem('userGoals') : null;
-      const userGoals = userGoalsStr ? JSON.parse(userGoalsStr) : [];
-      goal = userGoals.find((g: any) => g.id === resolvedParams.id);
-      console.log('Found goal:', goal ? { id: goal.id, title: goal.title, ownerEmail: goal.owner?.email } : 'NOT FOUND');
-    } catch (e) {
-      console.error('Failed to parse goals:', e);
-    }
+    console.log('Found goal:', goal ? { id: goal.id, title: goal.title, ownerEmail: goal.owner?.email } : 'NOT FOUND');
 
     // 담당자와 리뷰어의 이메일 수집
     const recipients: string[] = [];
 
     if (goal) {
       // 담당자(owner)의 이메일
-      if (goal.owner?.email) {
-        recipients.push(goal.owner.email);
+      const ownerEmail = goal.owner?.email;
+
+      if (ownerEmail) {
+        recipients.push(ownerEmail);
       }
       console.log('Checkin recipients:', recipients.length);
 
       // 리뷰어(sharedWith)의 이메일
       if (goal.sharedWith && goal.sharedWith.length > 0) {
-        const userMembersStr = typeof window !== 'undefined' ? localStorage.getItem('userMembers') : null;
-        let members: any[] = [];
-
-        try {
-          members = userMembersStr ? JSON.parse(userMembersStr) : [];
-        } catch (e) {
-          console.error('Failed to parse members:', e);
-        }
-
-        for (const reviewer of goal.sharedWith) {
-          const member = members.find(m => m.name === reviewer);
-          if (member?.email) {
-            recipients.push(member.email);
+        for (const reviewerName of goal.sharedWith) {
+          // 클라이언트에서 전달된 goal에 reviewers 정보가 있으면 사용
+          // 아니면 이름으로 표기만 하고 실제 알림은 owner에게만
+          if (reviewerName && typeof reviewerName === 'string') {
+            // 나중에 구성원 DB가 있으면 여기서 이메일 조회
+            // 지금은 owner만 알림 받음
           }
         }
       }
