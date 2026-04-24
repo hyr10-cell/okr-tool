@@ -112,9 +112,9 @@ export default function LoginPage() {
               { value: '8', label: '이번 주 체크인' },
               { value: '94%', label: '참여율' },
             ].map((stat) => (
-              <div key={stat.label} className="flex-1 p-5 rounded-2xl bg-white bg-opacity-15 border border-white border-opacity-20 backdrop-blur-md hover:bg-opacity-20 transition">
-                <div className="text-3xl font-bold" style={{ letterSpacing: '-0.02em' }}>{stat.value}</div>
-                <div className="text-sm opacity-90 mt-2 font-medium">{stat.label}</div>
+              <div key={stat.label} className="flex-1 p-5 rounded-2xl bg-white bg-opacity-5 border border-white border-opacity-30 backdrop-blur-xl hover:bg-opacity-10 transition">
+                <div className="text-3xl font-bold text-white" style={{ letterSpacing: '-0.02em' }}>{stat.value}</div>
+                <div className="text-sm text-white opacity-95 mt-2 font-medium">{stat.label}</div>
               </div>
             ))}
           </div>
