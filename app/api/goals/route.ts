@@ -43,6 +43,9 @@ export async function POST(request: NextRequest) {
         actor: { name: goal.owner?.name || '나', email: goal.owner?.email || '' },
         recipients: [...new Set(recipients)], // 중복 제거
         target: { title: goal.title, id: goal.id, type: 'goal' },
+        details: {
+          goalTitle: goal.title,
+        },
       });
     }
 
@@ -95,6 +98,10 @@ export async function PUT(request: NextRequest) {
         actor: { name: goal.owner?.name || '나', email: goal.owner?.email || '' },
         recipients: [...new Set(recipients)],
         target: { title: goal.title, id: goal.id, type: 'goal' },
+        details: {
+          goalTitle: goal.title,
+          changes: goal.description ? '목표 정보 수정됨' : '목표 수정됨',
+        },
       });
     }
 

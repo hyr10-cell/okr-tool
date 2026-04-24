@@ -38,11 +38,21 @@ export async function POST(
 
       // 알림 발송
       if (recipients.length > 0) {
+        const statusLabel: Record<string, string> = {
+          PENDING: '대기', ON_TRACK: '순항', OFF_TRACK: '난항', COMPLETED: '완료',
+        };
+
         await sendNotification({
           type: 'checkin_submitted',
           actor: { name: goal.owner?.name || '나', email: goal.owner?.email || '' },
           recipients: [...new Set(recipients)],
           target: { title: goal.title || '목표', id: resolvedParams.id, type: 'checkin' },
+          details: {
+            goalTitle: goal.title || '목표',
+            progress,
+            status: statusLabel[status] || status,
+            note,
+          },
         });
       }
     }

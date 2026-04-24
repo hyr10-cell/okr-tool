@@ -39,7 +39,7 @@ export async function sendSlackMessage(message: SlackMessage) {
   }
 }
 
-export function formatSlackMessage(type: string, actor: string, target: string): SlackMessage {
+export function formatSlackMessage(type: string, actor: string, details: any): SlackMessage {
   const emoji = {
     goal_created: '🎯',
     goal_updated: '📝',
@@ -62,15 +62,41 @@ export function formatSlackMessage(type: string, actor: string, target: string):
     comment_added: '새 댓글',
   }[type] || '활동';
 
+  let contentText = '';
+
+  switch(type) {
+    case 'goal_created':
+      contentText = `*목표:* ${details.goalTitle}`;
+      break;
+    case 'goal_updated':
+      contentText = `*목표:* ${details.goalTitle}\n*변경사항:* ${details.changes || '목표 정보 수정됨'}`;
+      break;
+    case 'goal_deleted':
+      contentText = `*삭제된 목표:* ${details.goalTitle}`;
+      break;
+    case 'checkin_submitted':
+      contentText = `*목표:* ${details.goalTitle}\n*진행률:* ${details.progress}%\n*상태:* ${details.status}\n${details.note ? `*내용:* ${details.note}` : ''}`;
+      break;
+    case 'comment_added':
+      contentText = `*목표:* ${details.goalTitle}\n*댓글:* ${details.commentContent}`;
+      break;
+    case 'feedback_created':
+    case 'feedback_updated':
+      contentText = `*${details.from}* → *${details.recipient}*\n*유형:* ${details.feedbackType === 'KEEP_GOING' ? '좋은 점 👍' : '개선점 🔧'}\n*내용:* ${details.content}`;
+      break;
+    default:
+      contentText = `*대상:* ${details.target}`;
+  }
+
   return {
     channel: 'D0AVC2L6KEV',
-    text: `${emoji} ${typeLabel} by ${actor}: ${target}`,
+    text: `${emoji} ${typeLabel} by ${actor}`,
     blocks: [
       {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: `${emoji} *${typeLabel}*\n*담당자:* ${actor}\n*대상:* ${target}`,
+          text: `${emoji} *${typeLabel}* by ${actor}\n${contentText}`,
         },
       },
     ],

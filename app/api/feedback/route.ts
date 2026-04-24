@@ -27,6 +27,12 @@ export async function POST(request: NextRequest) {
         actor: { name: feedback.from || '나', email: feedback.fromEmail || '' },
         recipients: [...new Set(recipients)],
         target: { title: feedback.recipient || '피드백', id: feedback.id, type: 'feedback' },
+        details: {
+          from: feedback.from || '나',
+          recipient: feedback.recipient || '피드백',
+          feedbackType: feedback.type === 'KEEP_GOING' ? '좋은 점' : '개선점',
+          content: feedback.content,
+        },
       });
     }
 
@@ -65,6 +71,12 @@ export async function PUT(request: NextRequest) {
         actor: { name: feedback.from || '나', email: feedback.fromEmail || '' },
         recipients: [...new Set(recipients)],
         target: { title: feedback.recipient || '피드백', id: feedback.id, type: 'feedback' },
+        details: {
+          from: feedback.from || '나',
+          recipient: feedback.recipient || '피드백',
+          feedbackType: feedback.type === 'KEEP_GOING' ? '좋은 점' : '개선점',
+          content: feedback.content,
+        },
       });
     }
 

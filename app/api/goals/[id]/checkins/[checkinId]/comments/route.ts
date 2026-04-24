@@ -30,6 +30,10 @@ export async function POST(
           actor: { name: '사용자', email: '' },
           recipients: [...new Set(recipients)],
           target: { title: goal.title || '목표', id: resolvedParams.id, type: 'comment' },
+          details: {
+            goalTitle: goal.title || '목표',
+            commentContent: content,
+          },
         });
       }
     }

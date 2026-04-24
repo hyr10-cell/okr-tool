@@ -69,6 +69,6 @@ async function sendEmailNotification(payload: NotificationPayload) {
 }
 
 async function sendSlackNotification(payload: NotificationPayload) {
-  const slackMessage = formatSlackMessage(payload.type, payload.actor.name, payload.target.title);
+  const slackMessage = formatSlackMessage(payload.type, payload.actor.name, payload.details || { target: payload.target.title });
   await sendSlackMessage(slackMessage);
 }
