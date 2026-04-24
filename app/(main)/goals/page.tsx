@@ -8,7 +8,7 @@ interface Goal {
   id: string;
   title: string;
   status: string;
-  owner: { name: string };
+  owner: { name: string; email?: string };
   level: string;
   weight?: number;
   description?: string;
@@ -43,14 +43,6 @@ export default function GoalsPage() {
       const parsedUser = JSON.parse(savedUser);
       setUser(parsedUser);
       setOwner(parsedUser.name);
-
-      // 사용자별로 데모 데이터 한 번만 삭제
-      const cleanedKey = `_demoCleaned_${parsedUser.name}`;
-      if (!localStorage.getItem(cleanedKey)) {
-        localStorage.removeItem('userGoals');
-        localStorage.removeItem('userFeedbacks');
-        localStorage.setItem(cleanedKey, 'true');
-      }
     }
     fetchGoals();
   }, []);
@@ -111,7 +103,7 @@ export default function GoalsPage() {
       startDate,
       endDate,
       status: editingGoalId ? goals.find(g => g.id === editingGoalId)?.status || 'PENDING' : 'PENDING',
-      owner: { name: owner },
+      owner: { name: owner, email: user?.email || '' },
       level: 'INDIVIDUAL',
       progress: editingGoalId ? goals.find(g => g.id === editingGoalId)?.progress || 0 : 0,
       sharedWith,
@@ -149,6 +141,9 @@ export default function GoalsPage() {
       goalId: editingGoalId || goalData.id,
     });
     localStorage.setItem('userActivities', JSON.stringify(activities.slice(0, 20)));
+
+    // 대시보드에 실시간 갱신 알림
+    window.dispatchEvent(new Event('localStorageChanged'));
 
     setTitle('');
     setDescription('');

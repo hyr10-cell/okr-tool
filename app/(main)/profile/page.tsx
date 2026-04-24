@@ -7,7 +7,7 @@ interface User {
   name: string;
   email: string;
   role: string;
-  org?: string;
+  org?: string | string[];
 }
 
 export default function ProfilePage() {
@@ -33,7 +33,8 @@ export default function ProfilePage() {
   };
 
   const handleSave = async () => {
-    if (!formData.org?.trim()) {
+    const orgValue = Array.isArray(formData.org) ? formData.org[0] : formData.org;
+    if (!orgValue?.trim()) {
       alert('부서는 필수 입력 항목입니다');
       return;
     }
@@ -41,8 +42,9 @@ export default function ProfilePage() {
     setSaving(true);
     try {
       // Save to localStorage
-      localStorage.setItem('user', JSON.stringify(formData));
-      setUser(formData);
+      const dataToSave = { ...formData, org: orgValue };
+      localStorage.setItem('user', JSON.stringify(dataToSave));
+      setUser(dataToSave);
       setIsEditing(false);
     } finally {
       setSaving(false);
@@ -106,7 +108,9 @@ export default function ProfilePage() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600 mb-1">부서</p>
-                  <p className="text-gray-900">{user.org || '-'}</p>
+                  <p className="text-gray-900">
+                    {typeof user.org === 'string' ? user.org : (Array.isArray(user.org) ? user.org.join(', ') : '-')}
+                  </p>
                 </div>
               </div>
 
@@ -136,7 +140,7 @@ export default function ProfilePage() {
 
               <FormInput
                 label="부서"
-                value={formData.org || ''}
+                value={typeof formData.org === 'string' ? formData.org : (Array.isArray(formData.org) ? formData.org.join(', ') : '')}
                 onChange={(value) => handleEditChange('org', value)}
                 placeholder="부서명을 입력하세요"
                 required

@@ -69,7 +69,10 @@ export default function OrgPage() {
       const filteredOrgs = currentUser?.role === 'ADMIN'
         ? uniqueOrgs
         : currentUser?.org
-        ? uniqueOrgs.filter(org => org.name === currentUser.org)
+        ? (() => {
+            const userDepts = Array.isArray(currentUser.org) ? currentUser.org : [currentUser.org];
+            return uniqueOrgs.filter(org => userDepts.includes(org.name));
+          })()
         : uniqueOrgs;
 
       setOrgs(filteredOrgs);
@@ -255,8 +258,13 @@ export default function OrgPage() {
     const isExpanded = expandedOrgIds.has(org.id);
     const hasChildren = org.children && org.children.length > 0;
 
-    // 같은 부서의 구성원만 필터링
-    const visibleMembers = org.members.filter(m => (m.dept === user?.org || m.org === user?.org) || isAdmin);
+    // 같은 부서의 구성원만 필터링 (다중 부서 지원)
+    const visibleMembers = isAdmin
+      ? org.members
+      : org.members.filter(m => {
+          const userDepts = Array.isArray(user?.org) ? user.org : (user?.org ? [user.org] : []);
+          return userDepts.length === 0 || userDepts.includes(m.org);
+        });
 
     return (
       <div key={org.id} style={{ marginLeft: `${level * 24}px` }} className="mb-4">

@@ -9,6 +9,8 @@ interface Goal {
   id: string;
   title: string;
   status: string;
+  owner?: { name: string };
+  sharedWith?: string[];
 }
 
 interface Activity {
@@ -32,6 +34,7 @@ export default function DashboardPage() {
     pending: 0,
   });
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [allGoals, setAllGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -40,6 +43,27 @@ export default function DashboardPage() {
       setUser(JSON.parse(savedUser));
     }
     fetchDashboardData();
+
+    // localStorage 변경 감지 (다른 탭이나 같은 탭에서)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'userActivities' || e.key === 'userGoals') {
+        fetchDashboardData();
+      }
+    };
+
+    // 같은 탭에서 localStorage 변경 감지
+    const handleLocalStorageChange = () => {
+      fetchDashboardData();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    // 같은 탭 내에서의 localStorage 변경 감지 (커스텀 이벤트)
+    window.addEventListener('localStorageChanged', handleLocalStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('localStorageChanged', handleLocalStorageChange);
+    };
   }, []);
 
   async function fetchDashboardData() {
@@ -59,11 +83,11 @@ export default function DashboardPage() {
       const userGoals = userGoalsStr ? JSON.parse(userGoalsStr) : [];
 
       // API 목표와 사용자 목표 병합 (사용자 목표가 우선)
-      const allGoals = [...userGoals, ...apiGoals];
+      const goals = [...userGoals, ...apiGoals];
 
       // 중복 제거 (같은 id는 userGoals 버전 사용)
       const uniqueGoals = Array.from(
-        new Map(allGoals.map(goal => [goal.id, goal])).values()
+        new Map(goals.map(goal => [goal.id, goal])).values()
       );
 
       // 관리자는 모든 목표 조회 가능, 일반 사용자는 담당자이거나 리뷰어인 목표만 표시
@@ -73,6 +97,8 @@ export default function DashboardPage() {
             g.owner?.name === currentUser?.name || g.sharedWith?.includes(currentUser?.name)
           );
 
+      setAllGoals(myGoals);
+
       const newStats = {
         total: myGoals.length,
         onTrack: myGoals.filter((g: Goal) => g.status === 'ON_TRACK').length,
@@ -81,49 +107,31 @@ export default function DashboardPage() {
         pending: myGoals.filter((g: Goal) => g.status === 'PENDING').length,
       };
       setStats(newStats);
-    } catch (err) {
-      console.error('대시보드 데이터 로드 실패:', err);
-      // Demo data
-      setStats({
-        total: 8,
-        onTrack: 3,
-        offTrack: 2,
-        completed: 3,
-        pending: 0,
-      });
-    }
 
-    try {
-      const res = await fetch('/api/activities');
-      let apiActivities: Activity[] = [];
-      if (res.ok) {
-        const data = await res.json();
-        apiActivities = data.data || [];
-      }
-
-      // localStorage에서 사용자 활동 로드
+      // 활동 로드
       const userActivitiesStr = localStorage.getItem('userActivities');
       const userActivities = userActivitiesStr ? JSON.parse(userActivitiesStr) : [];
 
-      // 활동 병합 (최근것부터)
-      const allActivities = [...userActivities, ...apiActivities];
-
-      // 관리자는 모든 활동 조회 가능, 일반 사용자는 자신과 관련된 활동만 표시
-      let filteredActivities = allActivities;
+      // 활동 필터링 (자신의 목표와 관련된 활동만)
+      let filteredActivities = userActivities;
       if (currentUser?.role !== 'ADMIN') {
-        filteredActivities = allActivities.filter((activity: Activity) => {
-          // 자신의 목표와 관련된 활동만 표시
-          if (activity.goalId) {
-            const goal = myGoals.find(g => g.id === activity.goalId);
-            if (goal) return true;
-          }
-          // 자신의 피드백과 관련된 활동도 표시할 수 있음
-          return false;
+        const myGoalIds = myGoals.map(g => g.id);
+        filteredActivities = userActivities.filter((activity: Activity) => {
+          // 자신의 목표와 관련된 활동이거나 goalId가 없으면 표시
+          return !activity.goalId || myGoalIds.includes(activity.goalId);
         });
       }
 
       setActivities(filteredActivities.slice(0, 10)); // 최근 10개만 표시
     } catch (err) {
+      console.error('대시보드 데이터 로드 실패:', err);
+      setStats({
+        total: 0,
+        onTrack: 0,
+        offTrack: 0,
+        completed: 0,
+        pending: 0,
+      });
       setActivities([]);
     } finally {
       setLoading(false);

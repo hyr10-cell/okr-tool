@@ -1,4 +1,5 @@
 import { sendEmail } from './email';
+import { sendSlackMessage, formatSlackMessage } from './slack';
 
 export type NotificationType =
   | 'goal_created'
@@ -20,6 +21,7 @@ export interface NotificationPayload {
 
 export async function sendNotification(payload: NotificationPayload) {
   await sendEmailNotification(payload);
+  await sendSlackNotification(payload);
 }
 
 async function sendEmailNotification(payload: NotificationPayload) {
@@ -64,4 +66,9 @@ async function sendEmailNotification(payload: NotificationPayload) {
   for (const recipientEmail of payload.recipients) {
     await sendEmail(recipientEmail, template.subject, template.html);
   }
+}
+
+async function sendSlackNotification(payload: NotificationPayload) {
+  const slackMessage = formatSlackMessage(payload.type, payload.actor.name, payload.target.title);
+  await sendSlackMessage(slackMessage);
 }

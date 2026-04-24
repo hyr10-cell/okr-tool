@@ -16,6 +16,7 @@ export async function POST(
       const userGoalsStr = typeof window !== 'undefined' ? localStorage.getItem('userGoals') : null;
       const userGoals = userGoalsStr ? JSON.parse(userGoalsStr) : [];
       goal = userGoals.find((g: any) => g.id === resolvedParams.id);
+      console.log('Found goal:', goal ? { id: goal.id, title: goal.title, ownerEmail: goal.owner?.email } : 'NOT FOUND');
     } catch (e) {
       console.error('Failed to parse goals:', e);
     }
@@ -28,6 +29,7 @@ export async function POST(
       if (goal.owner?.email) {
         recipients.push(goal.owner.email);
       }
+      console.log('Checkin recipients:', recipients.length);
 
       // 리뷰어(sharedWith)의 이메일
       if (goal.sharedWith && goal.sharedWith.length > 0) {

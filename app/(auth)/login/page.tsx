@@ -3,7 +3,15 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-const DEMO_ACCOUNTS = [
+interface Account {
+  email: string;
+  name: string;
+  role: string;
+  org?: string | string[];
+  dept?: string | string[];
+}
+
+const DEMO_ACCOUNTS: Account[] = [
   { email: 'admin@wincubemkt.com', name: '관리자', role: 'ADMIN' },
 ];
 
@@ -13,13 +21,13 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     // 1. DEMO_ACCOUNTS에서 찾기
-    let account = DEMO_ACCOUNTS.find(a => a.email === email);
+    let account: Account | undefined = DEMO_ACCOUNTS.find(a => a.email === email);
 
     // 2. 없으면 localStorage의 userMembers에서 찾기
     if (!account) {
@@ -32,6 +40,7 @@ export default function LoginPage() {
           name: member.name,
           role: 'MEMBER',
           org: member.dept,
+          dept: member.dept,
         };
       }
     }
