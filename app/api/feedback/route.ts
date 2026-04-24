@@ -9,49 +9,22 @@ export async function POST(request: NextRequest) {
   try {
     const feedback = await request.json();
 
-    // 피드백을 받는 사람과 보낸 사람의 이메일 수집
+    // 클라이언트에서 받은 이메일 정보 사용
     const recipients: string[] = [];
 
-    // 보낸 사람(from)의 이메일
-    if (feedback.from) {
-      // localStorage에서 구성원 정보 조회
-      const userMembersStr = typeof window !== 'undefined' ? localStorage.getItem('userMembers') : null;
-      let members: any[] = [];
-
-      try {
-        members = userMembersStr ? JSON.parse(userMembersStr) : [];
-      } catch (e) {
-        console.error('Failed to parse members:', e);
-      }
-
-      const fromMember = members.find(m => m.name === feedback.from);
-      if (fromMember?.email) {
-        recipients.push(fromMember.email);
-      }
+    if (feedback.fromEmail) {
+      recipients.push(feedback.fromEmail);
     }
 
-    // 받는 사람(recipient)의 이메일
-    if (feedback.recipient) {
-      const userMembersStr = typeof window !== 'undefined' ? localStorage.getItem('userMembers') : null;
-      let members: any[] = [];
-
-      try {
-        members = userMembersStr ? JSON.parse(userMembersStr) : [];
-      } catch (e) {
-        console.error('Failed to parse members:', e);
-      }
-
-      const toMember = members.find(m => m.name === feedback.recipient);
-      if (toMember?.email) {
-        recipients.push(toMember.email);
-      }
+    if (feedback.recipientEmail) {
+      recipients.push(feedback.recipientEmail);
     }
 
     // 알림 발송
     if (recipients.length > 0) {
       await sendNotification({
         type: 'feedback_created',
-        actor: { name: feedback.from || '나', email: '' },
+        actor: { name: feedback.from || '나', email: feedback.fromEmail || '' },
         recipients: [...new Set(recipients)],
         target: { title: feedback.recipient || '피드백', id: feedback.id, type: 'feedback' },
       });
@@ -74,46 +47,22 @@ export async function PUT(request: NextRequest) {
   try {
     const feedback = await request.json();
 
-    // 피드백을 받는 사람과 보낸 사람의 이메일 수집
+    // 클라이언트에서 받은 이메일 정보 사용
     const recipients: string[] = [];
 
-    if (feedback.from) {
-      const userMembersStr = typeof window !== 'undefined' ? localStorage.getItem('userMembers') : null;
-      let members: any[] = [];
-
-      try {
-        members = userMembersStr ? JSON.parse(userMembersStr) : [];
-      } catch (e) {
-        console.error('Failed to parse members:', e);
-      }
-
-      const fromMember = members.find(m => m.name === feedback.from);
-      if (fromMember?.email) {
-        recipients.push(fromMember.email);
-      }
+    if (feedback.fromEmail) {
+      recipients.push(feedback.fromEmail);
     }
 
-    if (feedback.recipient) {
-      const userMembersStr = typeof window !== 'undefined' ? localStorage.getItem('userMembers') : null;
-      let members: any[] = [];
-
-      try {
-        members = userMembersStr ? JSON.parse(userMembersStr) : [];
-      } catch (e) {
-        console.error('Failed to parse members:', e);
-      }
-
-      const toMember = members.find(m => m.name === feedback.recipient);
-      if (toMember?.email) {
-        recipients.push(toMember.email);
-      }
+    if (feedback.recipientEmail) {
+      recipients.push(feedback.recipientEmail);
     }
 
     // 알림 발송
     if (recipients.length > 0) {
       await sendNotification({
         type: 'feedback_updated',
-        actor: { name: feedback.from || '나', email: '' },
+        actor: { name: feedback.from || '나', email: feedback.fromEmail || '' },
         recipients: [...new Set(recipients)],
         target: { title: feedback.recipient || '피드백', id: feedback.id, type: 'feedback' },
       });

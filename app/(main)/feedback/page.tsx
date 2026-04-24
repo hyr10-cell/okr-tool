@@ -7,11 +7,13 @@ import { formatDateKo } from '@/app/lib/dateUtils';
 interface Feedback {
   id: string;
   from: string;
+  fromEmail?: string;
   type: 'KEEP_GOING' | 'IMPROVE';
   content: string;
   createdAt?: string;
   direction?: 'received' | 'sent';
   recipient?: string;
+  recipientEmail?: string;
 }
 
 interface Member {
@@ -77,14 +79,20 @@ export default function FeedbackPage() {
       return;
     }
 
+    // 수신자의 이메일 찾기
+    const recipientMember = allMembers.find((m: any) => m.name === recipientName);
+    const recipientEmail = recipientMember?.email || '';
+
     const feedbackData: Feedback = {
       id: editingFeedbackId || Date.now().toString(),
       from: user?.name || '나',
+      fromEmail: user?.email || '',
       type: feedbackType,
       content,
       createdAt: editingFeedbackId ? feedbacks.find(f => f.id === editingFeedbackId)?.createdAt || new Date().toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       direction: 'sent',
       recipient: recipientName,
+      recipientEmail,
     };
 
     try {
