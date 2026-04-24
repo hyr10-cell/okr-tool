@@ -234,61 +234,68 @@ export default function GoalsPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">목표</h1>
-        <Button onClick={() => setShowModal(true)}>+ 새 목표</Button>
+      {/* 토ップ바 */}
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">목표</h1>
+          <p className="text-sm text-gray-500 mt-1">{filteredGoals.length}개의 목표 · Q2 2026</p>
+        </div>
+        <Button onClick={() => setShowModal(true)} className="bg-indigo-600 hover:bg-indigo-700">
+          + 새 목표
+        </Button>
       </div>
 
       {/* 필터 영역 */}
-      <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-        <FormInput
-          label="검색"
-          value={searchQuery}
-          onChange={setSearchQuery}
-          placeholder="목표 검색..."
-          type="text"
-        />
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">상태</label>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-indigo-500"
-          >
-            <option value="">전체</option>
-            <option value="PENDING">대기</option>
-            <option value="ON_TRACK">순항</option>
-            <option value="OFF_TRACK">난항</option>
-            <option value="COMPLETED">완료</option>
-            <option value="STOPPED">중단</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">레벨</label>
-          <select
-            value={levelFilter}
-            onChange={(e) => setLevelFilter(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-indigo-500"
-          >
-            <option value="">전체</option>
-            <option value="COMPANY">회사</option>
-            <option value="TEAM">팀</option>
-            <option value="INDIVIDUAL">개인</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">초기화</label>
-          <Button
-            variant="secondary"
+      <div className="mb-6 flex flex-col gap-4">
+        <div className="flex gap-3 items-end">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">검색</label>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="목표 검색..."
+              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">상태</label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
+            >
+              <option value="">전체</option>
+              <option value="ON_TRACK">순항</option>
+              <option value="OFF_TRACK">난항</option>
+              <option value="COMPLETED">완료</option>
+              <option value="PENDING">대기</option>
+              <option value="STOPPED">중단</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">레벨</label>
+            <select
+              value={levelFilter}
+              onChange={(e) => setLevelFilter(e.target.value)}
+              className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition"
+            >
+              <option value="">전체</option>
+              <option value="COMPANY">회사</option>
+              <option value="TEAM">팀</option>
+              <option value="INDIVIDUAL">개인</option>
+            </select>
+          </div>
+          <button
             onClick={() => {
               setSearchQuery('');
               setStatusFilter('');
               setLevelFilter('');
             }}
-            className="w-full"
+            className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition"
           >
-            필터 초기화
-          </Button>
+            초기화
+          </button>
         </div>
       </div>
 
@@ -298,50 +305,86 @@ export default function GoalsPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {filteredGoals.map((goal) => (
-            <Card
-              key={goal.id}
-              hoverable
-              onClick={() => router.push(`/goals/${goal.id}`)}
-              className="cursor-pointer"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 text-lg">{goal.title}</h3>
-                  {goal.description && (
-                    <p className="text-sm text-gray-600 mt-1">{goal.description}</p>
-                  )}
+          {filteredGoals.map((goal) => {
+            const statusColors: Record<string, { dot: string; bg: string; text: string }> = {
+              'ON_TRACK': { dot: '#10B981', bg: '#ECFDF5', text: '#047857' },
+              'OFF_TRACK': { dot: '#F97316', bg: '#FFF7ED', text: '#C2410C' },
+              'COMPLETED': { dot: '#3B82F6', bg: '#EFF6FF', text: '#1D4ED8' },
+              'PENDING': { dot: '#8B5CF6', bg: '#F5F3FF', text: '#6D28D9' },
+              'STOPPED': { dot: '#94A3B8', bg: '#F1F5F9', text: '#475569' },
+            };
+            const colors = statusColors[goal.status] || statusColors['PENDING'];
+            const progress = goal.progress || 0;
 
-                  <div className="flex flex-col gap-2 mb-3">
-                    <div className="flex items-center gap-3">
-                      <StatusBadge status={goal.status} />
-                      <span className="text-xs text-gray-500 ml-auto">{goal.progress || 0}%</span>
+            return (
+              <Card
+                key={goal.id}
+                hoverable
+                onClick={() => router.push(`/goals/${goal.id}`)}
+                className="cursor-pointer hover:shadow-md transition p-5"
+              >
+                <div className="flex items-center gap-5">
+                  {/* 원형 진행률 */}
+                  <div className="relative flex-shrink-0" style={{ width: '64px', height: '64px' }}>
+                    <svg width="64" height="64" viewBox="0 0 64 64" className="transform -rotate-90">
+                      <circle cx="32" cy="32" r="28" fill="none" stroke="#E2E8F0" strokeWidth="5" />
+                      <circle
+                        cx="32"
+                        cy="32"
+                        r="28"
+                        fill="none"
+                        stroke={colors.dot}
+                        strokeWidth="5"
+                        strokeDasharray={`${(progress / 100) * 175.84} 175.84`}
+                        style={{ transition: 'stroke-dasharray 0.3s' }}
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="text-sm font-bold text-gray-900">{progress}%</span>
                     </div>
-                    <div className="text-xs text-gray-600">
+                  </div>
+
+                  {/* 목표 정보 */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <StatusBadge status={goal.status} />
+                      <span className="text-xs font-medium text-gray-500">
+                        {goal.startDate && goal.endDate && `${goal.startDate.slice(5)} – ${goal.endDate.slice(5)}`}
+                      </span>
+                    </div>
+                    <h3 className="font-semibold text-gray-900 text-base leading-snug">{goal.title}</h3>
+                    {goal.description && (
+                      <p className="text-sm text-gray-600 mt-1 line-clamp-1">{goal.description}</p>
+                    )}
+                    <div className="flex items-center gap-2 mt-2 text-xs text-gray-600">
                       <span>담당: {goal.owner.name}</span>
                       {goal.sharedWith && goal.sharedWith.length > 0 && (
-                        <span className="ml-2">/ 리뷰어: {goal.sharedWith.join(', ')}</span>
+                        <span>/ 리뷰어: {goal.sharedWith.length}명</span>
                       )}
                     </div>
                   </div>
+
+                  {/* 액션 버튼 */}
+                  <div className="flex gap-1 ml-4 flex-shrink-0">
+                    <button
+                      onClick={(e) => handleEditGoal(goal, e)}
+                      className="px-3 py-1.5 text-xs font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                      title="수정"
+                    >
+                      수정
+                    </button>
+                    <button
+                      onClick={(e) => handleDeleteGoal(goal.id, e)}
+                      className="px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition"
+                      title="삭제"
+                    >
+                      삭제
+                    </button>
+                  </div>
                 </div>
-                <div className="flex gap-2 ml-4 flex-shrink-0">
-                  <button
-                    onClick={(e) => handleEditGoal(goal, e)}
-                    className="text-indigo-600 hover:text-indigo-800 text-sm"
-                  >
-                    수정
-                  </button>
-                  <button
-                    onClick={(e) => handleDeleteGoal(goal.id, e)}
-                    className="text-red-600 hover:text-red-800 text-sm"
-                  >
-                    삭제
-                  </button>
-                </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
         </div>
       )}
 
