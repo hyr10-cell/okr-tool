@@ -19,7 +19,7 @@ export default function LoginPage() {
     setError('');
 
     // 1. DEMO_ACCOUNTS에서 찾기
-    let account = DEMO_ACCOUNTS.find(a => a.email === email);
+    let account: { email: string; name: string; role: string; org?: string } | undefined = DEMO_ACCOUNTS.find(a => a.email === email);
 
     // 2. 없으면 localStorage의 userMembers에서 찾기
     if (!account) {
